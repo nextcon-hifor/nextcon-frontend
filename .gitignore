@@ -1,3 +1,8 @@
+.DS_Store
+node_modules
+/dist
+AppData/
+
 # Logs
 logs
 *.log
@@ -28,3 +33,8 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# 환경 변수 파일 제외
+.env
+.env.development
+.env.production
