@@ -1,19 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import store from '@/store';
-import Home from '@/components/HelloWorld.vue';
-import About from '@/components/WelcomeItem.vue';
+import HomeIndex from '@/components/HomeIndex.vue';
+import LogIn from '@/components/auth/LogIn.vue';
+import CreateAccount from '@/components/auth/CreateAccount.vue';
 
 const routes = [
     {
         path: '/',
-        name: 'Home',
-        component: Home,
+        name: 'HomeIndex',
+        component: HomeIndex,
+        meta: { hideHeaderFooter: false, mainHeader: true}
     },
     {
-        path: '/about',
-        name: 'About',
-        component: About,
-    },
+        path: '/logIn',
+        name: 'LogIn',
+      component: LogIn,
+        meta: { hideHeaderFooter: true }, // 헤더 숨기기
+  },
+      {
+    path: '/createAccount',
+    name: 'CreateAccount',
+    component: CreateAccount, 
+    meta: { hideHeaderFooter: true },
+  },
 ];
 // 라우터 객체 생성
 const router = createRouter({
@@ -37,6 +46,7 @@ if (to.matched.some(record => record.meta.requiresAuth)) {
       return next('/login'); // 로그인 페이지로 리디렉트
     }
   }
+    next(); // 계속 진행
 });
 
 export default router;

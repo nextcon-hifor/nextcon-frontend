@@ -8,7 +8,7 @@ export default createStore({
     mutations: {
         setToken(state, token) {
             state.token = token;
-            sessionStorage.setItem('token', JSON.stringify(user));
+            sessionStorage.setItem('token', token);
         },
         clearToken(state) {
         state.token = null;
