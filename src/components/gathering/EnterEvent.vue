@@ -145,7 +145,7 @@ const isChecked = ref(false);
 const fetchEvent = async (eventId) => {
   try {
     const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/gathering/getEvents/${eventId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/events/getEvents/${eventId}`,
         {
           withCredentials: true, // 인증 정보를 포함
         }
@@ -301,7 +301,7 @@ const submitEvent = async () => {
     console.log(event.value.id, userId, userAnswer.value);
 
     const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/gathering/createParticipant`,
+        `${import.meta.env.VITE_API_BASE_URL}/participants/createParticipant`,
         {
           eventId: event.value.id,
           userId: userId,

@@ -393,7 +393,7 @@ const handleRegister = async () => {
   }
   console.log('핸들레지스터의 유저:',user)
   try {
-    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/googleSignUp`, user);
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/user/googleSignUp`, user);
     console.log('회원가입 응답:', response.data);
     alert('Sign-up completed!');
 

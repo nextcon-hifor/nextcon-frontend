@@ -235,7 +235,7 @@ export default {
 
       try {
         await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/gathering/subscribe`,
+          `${import.meta.env.VITE_API_BASE_URL}/events/subscribe`,
           { email: email.value },
           {
             withCredentials: true, // 인증 정보를 포함

@@ -218,21 +218,21 @@ const fetchAllEvents = async () => {
   try {
     // Host 이벤트 가져오기
     const hostResponse = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/gathering/getEventsByHostId/${wantShowUserId}`,
+      `${import.meta.env.VITE_API_BASE_URL}/events/getEventsByHostId/${wantShowUserId}`,
       { withCredentials: true }
     );
     hostEvents.value = hostResponse.data.map(mapEventData);
 
     // Participated 이벤트 가져오기
     const participatedResponse = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/gathering/getParticipatedEvent/${wantShowUserId}`,
+      `${import.meta.env.VITE_API_BASE_URL}/events/getParticipatedEvent/${wantShowUserId}`,
       { withCredentials: true }
     );
     participatedEvents.value = participatedResponse.data.map(mapEventData);
 
     // Liked 이벤트 가져오기
     const likedResponse = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/gathering/getLikedEvent/${wantShowUserId}`,
+      `${import.meta.env.VITE_API_BASE_URL}/events/getLikedEvent/${wantShowUserId}`,
       { withCredentials: true }
     );
     likedEvents.value = likedResponse.data.map(mapEventData);

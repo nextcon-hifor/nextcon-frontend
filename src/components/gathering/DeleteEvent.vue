@@ -97,7 +97,7 @@
       );
       console.log("Notification sent successfully");
       // DELETE 요청
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/gathering/${eventId}`, { withCredentials: true });
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/events/${eventId}`, { withCredentials: true });
       console.log("Event deleted successfully");
 
 

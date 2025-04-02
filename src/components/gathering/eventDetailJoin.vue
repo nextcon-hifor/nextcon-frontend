@@ -352,7 +352,7 @@ export default {
     const fetchEvent = async (eventId) => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/gathering/getEvents/${eventId}`,
+          `${import.meta.env.VITE_API_BASE_URL}/events/getEvents/${eventId}`,
           { withCredentials: true }
         );
 
@@ -415,7 +415,7 @@ export default {
       try {
         // 좋아요 상태를 백엔드에 반영
         const response = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/gathering/${event.value.id}/like`,
+          `${import.meta.env.VITE_API_BASE_URL}/likes/${event.value.id}/like`,
           {
             userId: sessionStorage.getItem('userId'), // 사용자 ID 전달
           },
@@ -438,7 +438,7 @@ export default {
       try {
 
         const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/gathering/checkParticipation`,
+          `${import.meta.env.VITE_API_BASE_URL}/participants/checkParticipation`,
           {
             params: { eventId, userId },
             withCredentials: true, // 인증 정보를 포함
@@ -464,7 +464,7 @@ export default {
         try {
           // 백엔드 호출
           const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/gathering/cancelParticipation`,
+            `${import.meta.env.VITE_API_BASE_URL}/participants/cancelParticipation`,
             {
               userId: userId.value,
               eventId: event.value.id,

@@ -78,7 +78,7 @@ export default {
             try {
                 // 로그인 처리 로직 (Axios를 사용해 백엔드 API 호출)
                 const response = await axios.post(
-                    `${import.meta.env.VITE_API_BASE_URL}/auth/signIn`,
+                    `${import.meta.env.VITE_API_BASE_URL}/user/signIn`,
                     form.value,
                     {
                         withCredentials: true, // 인증 정보를 포함
@@ -108,7 +108,7 @@ export default {
         };
 
         const handleGoogleLogin = () => {
-            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/to-google`;
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/user/to-google`;
 
         };
 

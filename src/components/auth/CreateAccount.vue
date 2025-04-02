@@ -543,7 +543,7 @@ const handleRegister = async () => {
 
     try {
         await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/auth/signUp`,
+            `${import.meta.env.VITE_API_BASE_URL}/user/signUp`,
             user,
             {
                 withCredentials: true, // 인증 정보를 포함

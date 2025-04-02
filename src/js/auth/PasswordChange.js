@@ -18,7 +18,7 @@ export default {
     const checkCurrentPassword = async () => {
       try {
         const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/auth/checkCurrentPassword`,
+            `${import.meta.env.VITE_API_BASE_URL}/user/checkCurrentPassword`,
             {
               userId: userId.value,
               password: currentPassword.value,
@@ -53,7 +53,7 @@ export default {
 
       try {
         await axios.patch(
-            `${import.meta.env.VITE_API_BASE_URL}/auth/updatePassword`,
+            `${import.meta.env.VITE_API_BASE_URL}/user/updatePassword`,
             {
               userId: userId.value,
               password: newPassword.value,

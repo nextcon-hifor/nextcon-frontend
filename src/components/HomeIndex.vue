@@ -525,7 +525,7 @@ const mapEventData = (event) => ({
 const fetchEvents = async (fetchType, params = {}) => {
     try {
         const response = await axios.get(
-            `${import.meta.env.VITE_API_BASE_URL}/gathering`,
+            `${import.meta.env.VITE_API_BASE_URL}/events`,
             {
                 params: { fetchType, ...params }, // 쿼리 파라미터 추가
                 withCredentials: true, // 인증 정보를 포함

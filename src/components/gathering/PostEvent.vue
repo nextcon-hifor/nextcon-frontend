@@ -341,7 +341,7 @@ const postEvent = async () => {
       const formData = new FormData();
       formData.append('file', rawFile);
       const uploadResponse = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/gathering/upload-image-postEvent`,
+          `${import.meta.env.VITE_API_BASE_URL}/events/upload-image-postEvent`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" }, // 파일 업로드 헤더 설정
@@ -381,7 +381,7 @@ const postEvent = async () => {
       console.log("🔹 [DEBUG] enrichedFormData before request:", JSON.stringify(enrichedFormData, null, 2));
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/gathering/submit`,
+        `${import.meta.env.VITE_API_BASE_URL}/events/submit`,
         enrichedFormData,
         {
           withCredentials: true, // 인증 정보를 포함

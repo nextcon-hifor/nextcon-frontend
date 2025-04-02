@@ -133,7 +133,7 @@ const approvedParticipants = computed(() => {
 const loadEventDetails = async () => {
   try {
     const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/gathering/getEventForPending/${eventId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/events/getEventForPending/${eventId}`,
         { withCredentials: true } // 인증 정보를 포함
     );
 
@@ -161,7 +161,7 @@ const updateParticipantStatus = async (participantId, status) => {
   }
   try {
     await axios.patch(
-        `${import.meta.env.VITE_API_BASE_URL}/gathering/${participantId}/status`,
+        `${import.meta.env.VITE_API_BASE_URL}/participants/${participantId}/status`,
         {
           status,
           eventId: event.value.id,
