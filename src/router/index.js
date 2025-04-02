@@ -2,12 +2,23 @@ import { createRouter, createWebHistory } from "vue-router";
 import store from "@/store";
 import HomeIndex from "@/components/HomeIndex.vue";
 import LogIn from "@/components/auth/LogIn.vue";
+import PasswordChange from "../components/auth/PasswordChange.vue";
+import FindUsername from "../components/auth/FindUsername.vue";
+import FindPassword from "../components/auth/FindPassword.vue";
+import GoogleSignUp from "../components/auth/googleSignUp.vue";
 import CreateAccount from "@/components/auth/CreateAccount.vue";
 import OurCompany from "@/components/about/OurCompany.vue";
 import ContactUs from "@/components/header/ContactUs.vue";
 import notice from "@/components/header/HiForeigners.vue";
 import fnq from "@/components/header/ServiceGuide.vue";
 import UserPage from "@/components/header/UserPage.vue";
+import AllEvents from "@/components/gathering/AllEvents.vue";
+import deleteEvent from "@/components/gathering/DeleteEvent.vue";
+import PostEvent from "@/components/gathering/PostEvent.vue";
+import EnterEvent from "@/components/gathering/EnterEvent.vue";
+import EventApprove from "../components/gathering/EventApprove.vue";
+import EventDetailJoin from "../components/gathering/eventDetailJoin.vue";
+import ReviewEvent from "@/components/gathering/ReviewEvent.vue";
 
 const routes = [
     {
@@ -27,6 +38,30 @@ const routes = [
         name: "CreateAccount",
         component: CreateAccount,
         meta: { hideHeaderFooter: true },
+    },
+    {
+        path: "/passwordChange",
+        name: "PasswordChange",
+        component: PasswordChange,
+        meta: { hideHeaderFooter: true },
+    },
+    {
+        path: "/findUsername",
+        name: "FindUsername",
+        component: FindUsername,
+        meta: { hideHeaderFooter: true },
+    },
+    {
+        path: "/findPassword",
+        name: "FindPassword",
+        component: FindPassword,
+        meta: { hideHeaderFooter: true },
+    },
+    {
+        path: "/googleSignUp",
+        name: "GoogleSignUp",
+        component: GoogleSignUp,
+        meta: { hideHeaderFooter: false },
     },
     {
         path: "/ourCompany",
@@ -56,6 +91,55 @@ const routes = [
         path: "/userPage/:userId",
         name: "UserPage",
         component: UserPage,
+        meta: { hideHeaderFooter: false },
+    },
+    {
+        path: "/events/:eventId",
+        name: "EventDetailJoin",
+        component: EventDetailJoin,
+        meta: { hideHeaderFooter: false },
+    },
+    {
+        path: "/manage/:eventId",
+        name: "EventApprove",
+        component: EventApprove,
+        meta: { hideHeaderFooter: false, requiresAuth: true },
+    },
+    {
+        path: "/allEvents",
+        name: "AllEvents",
+        component: AllEvents,
+        meta: { hideHeaderFooter: false, mainHeader: true },
+    },
+    {
+        path: "/postEvent",
+        name: "PostEvent",
+        component: PostEvent,
+
+        meta: { hideHeaderFooter: false, requiresAuth: true },
+    },
+    {
+        path: "/enterEvent/:eventId",
+        name: "EnterEvent",
+        component: EnterEvent,
+        meta: { hideHeaderFooter: false },
+    },
+    {
+        path: "/userPage/:userId",
+        name: "UserPage",
+        component: UserPage,
+        meta: { hideHeaderFooter: false },
+    },
+    {
+        path: "/deleteEvent/:userId",
+        name: "deleteEvent",
+        component: deleteEvent,
+        meta: { hideHeaderFooter: false, requiresAuth: true },
+    },
+    {
+        path: "/reviewEvent/:userId",
+        name: "reviewEvent",
+        component: ReviewEvent,
         meta: { hideHeaderFooter: false },
     },
 ];
