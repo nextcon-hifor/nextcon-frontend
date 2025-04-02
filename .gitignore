@@ -35,6 +35,6 @@ coverage
 *.tsbuildinfo
 
 # 환경 변수 파일 제외
-.env
-.env.development
-.env.production
+# .env
+# .env.development
+# .env.production
