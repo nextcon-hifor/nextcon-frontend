@@ -524,29 +524,57 @@ const mapEventData = (event) => ({
 // 통합된 fetchEvents 함수
 const fetchEvents = async (fetchType, params = {}) => {
     try {
+        if (import.meta.env.MODE === 'development') {
+            console.log(`[fetchEvents] 요청 시작 → fetchType="${fetchType}", params=`, params);
+        }
+
         const response = await axios.get(
             `${import.meta.env.VITE_API_BASE_URL}/events`,
             {
-                params: { fetchType, ...params }, // 쿼리 파라미터 추가
-                withCredentials: true, // 인증 정보를 포함
+                params: { fetchType, ...params },
+                withCredentials: true,
             }
         );
 
-        return response.data.map(mapEventData); // 데이터 매핑 후 반환
+        if (import.meta.env.MODE === 'development') {
+            console.log(`[fetchEvents] 응답 성공 → 이벤트 ${response.data.length}건 수신`);
+        }
+
+        return response.data.map(mapEventData);
     } catch (error) {
-        console.error(`Failed to fetch events for type "${fetchType}":`, error);
-        return []; // 에러 시 빈 배열 반환
+        console.error(`[fetchEvents] ❌ 요청 실패 → fetchType="${fetchType}"`, error);
+
+        if (import.meta.env.MODE === 'development') {
+            console.warn(`[fetchEvents] 반환값을 빈 배열로 대체`);
+        }
+
+        return [];
     }
 };
 
 // 모든 이벤트 가져오기
 const fetchAllEvents = async () => {
+    if (import.meta.env.MODE === 'development') {
+        console.log('[fetchAllEvents] 전체 이벤트 요청');
+    }
+
     events.value = await fetchEvents('all');
 };
 
 // 핫 이벤트 가져오기
 const fetchHotEvents = async () => {
+    if (import.meta.env.MODE === 'development') {
+        console.log('[fetchHotEvents] 인기 이벤트 요청');
+    }
+
     hotEvents.value = await fetchEvents('hot');
+
+        // ✅ 여기가 핵심
+        console.log('[fetchHotEvents] 수신된 hotEvents:', hotEvents.value);
+
+    if (hotEvents.value.length === 0) {
+        console.warn('[fetchHotEvents] ⚠️ 인기 이벤트 데이터가 비어 있습니다!');
+    }
 };
 
 
