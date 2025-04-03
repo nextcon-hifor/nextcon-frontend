@@ -225,7 +225,7 @@ const fetchAllEvents = async () => {
 
     // Participated 이벤트 가져오기
     const participatedResponse = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/events/getParticipatedEvent/${wantShowUserId}`,
+      `${import.meta.env.VITE_API_BASE_URL}/participants/getParticipatedEvent/${wantShowUserId}`,
       { withCredentials: true }
     );
     participatedEvents.value = participatedResponse.data.map(mapEventData);
