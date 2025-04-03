@@ -34,7 +34,7 @@
                             <option value="">Tips</option>
                             <option value="">News</option>
                             <option value="">Blog</option>
-                        </select>`
+                        </select>
                     </div>
                     <div class="col-6">
                         <label for="">Search</label>
@@ -49,6 +49,8 @@
         </div>
     </div>
     </div>
+
+    <router-link to="/createBlog"  v-if="user === 'hifor'">Create blog</router-link>
   
      <!-- contents -->
   <!-- <div class="contents-con">
@@ -99,6 +101,11 @@
   <script setup>
   
   import { ref, computed } from "vue";
+  import { useStore } from 'vuex';
+
+const store = useStore();
+const user = computed(() => store.state.userId);
+console.log(user.value)
   
   // Mock 데이터
   const allCards = ref([
