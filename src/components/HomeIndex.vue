@@ -569,8 +569,8 @@ const fetchHotEvents = async () => {
 
     hotEvents.value = await fetchEvents('hot');
 
-        // ✅ 여기가 핵심
-        console.log('[fetchHotEvents] 수신된 hotEvents:', hotEvents.value);
+    // ✅ 여기가 핵심
+    console.log('[fetchHotEvents] 수신된 hotEvents:', hotEvents.value);
 
     if (hotEvents.value.length === 0) {
         console.warn('[fetchHotEvents] ⚠️ 인기 이벤트 데이터가 비어 있습니다!');

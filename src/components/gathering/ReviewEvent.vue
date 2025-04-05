@@ -86,7 +86,8 @@ const reviewEvent = async () => {
     const reviewData = {
       userId,
       eventId,
-      ...form.value,
+      rating: form.value.rating,
+      comment: form.value.reviewText || '', // comment가 선택사항이라면 빈 문자열로 설정
     };
 
     const response = await axios.post(
@@ -97,7 +98,7 @@ const reviewEvent = async () => {
 
     console.log('✅ [SUCCESS] Review submitted:', response.data);
     alert('Review submitted successfully!');
-    await router.push(`/reviews/${response.data.review.id}`);
+    await router.push(`/events/${eventId}`);
   } catch (error) {
     console.error('❌ [ERROR] Failed to submit review:', error);
     if (error.response) {
