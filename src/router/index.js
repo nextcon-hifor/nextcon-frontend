@@ -94,6 +94,7 @@ const routes = [
         component: UserPage,
         meta: { hideHeaderFooter: false },
     },
+
     {
         path: "/events/:eventId",
         name: "EventDetailJoin",
@@ -138,7 +139,7 @@ const routes = [
         meta: { hideHeaderFooter: false, requiresAuth: true },
     },
     {
-        path: "/reviewEvent/:userId",
+        path: "/reviewEvent/:eventId",
         name: "reviewEvent",
         component: ReviewEvent,
         meta: { hideHeaderFooter: false },
@@ -158,15 +159,14 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const userId = store.getters.userId;
-  
-    if (to.name === 'createBlog' && userId !== 'hifor') {
-      alert('접근 권한이 없습니다.');
-      return next('/');
+
+    if (to.name === "createBlog" && userId !== "hifor") {
+        alert("접근 권한이 없습니다.");
+        return next("/");
     }
-  
+
     next();
-  });
-  
+});
 
 // 전역 가드 추가
 router.beforeEach((to, from, next) => {
