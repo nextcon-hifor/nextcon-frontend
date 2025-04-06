@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import store from "@/store";
 import HomeIndex from "@/components/HomeIndex.vue";
-import LogIn from "@/components/auth/LogIn.vue";
+import LogIn from "@/components/auth/Login.vue";
 import PasswordChange from "../components/auth/PasswordChange.vue";
 import FindUsername from "../components/auth/FindUsername.vue";
 import FindPassword from "../components/auth/FindPassword.vue";
@@ -19,6 +19,7 @@ import EnterEvent from "@/components/gathering/EnterEvent.vue";
 import EventApprove from "../components/gathering/EventApprove.vue";
 import EventDetailJoin from "../components/gathering/eventDetailJoin.vue";
 import ReviewEvent from "@/components/gathering/ReviewEvent.vue";
+import CreateBlog from "@/components/header/CreateBlog.vue";
 
 const routes = [
     {
@@ -142,12 +143,30 @@ const routes = [
         component: ReviewEvent,
         meta: { hideHeaderFooter: false },
     },
+    {
+        path: "/createBlog",
+        name: "createBlog",
+        component: CreateBlog,
+        meta: { hideHeaderFooter: false },
+    },
 ];
 // 라우터 객체 생성
 const router = createRouter({
     history: createWebHistory(import.meta.env.VITE_BASE_URL),
     routes,
 });
+
+router.beforeEach((to, from, next) => {
+    const userId = store.getters.userId;
+  
+    if (to.name === 'createBlog' && userId !== 'hifor') {
+      alert('접근 권한이 없습니다.');
+      return next('/');
+    }
+  
+    next();
+  });
+  
 
 // 전역 가드 추가
 router.beforeEach((to, from, next) => {
