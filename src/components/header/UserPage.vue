@@ -28,10 +28,10 @@
           </div>
           <div class="stars-container">
             <span v-for="star in 5" :key="star">
-              <i :class="star <= 3.5 ? 'fas fa-star' : 'far fa-star'" style="font-size: 24px;"></i>
-            </span> <!--user.rate-->
+              <i :class="star <= user.averageRating ? 'fas fa-star' : 'far fa-star'" style="font-size: 24px;"></i>
+            </span> <!--event.rate-->
             <span class="host-info-text" style="margin-left: 10px; font-size: 16px; color: #555;">
-              {{ 3.5 }} <!--user.rate.toFixed(1)-->
+              {{ user.averageRating }} <!--event.rate.toFixed(1)-->
             </span>
           </div>
         </div>
@@ -131,6 +131,7 @@ const user = reactive({
   age: 0,
   nationality: '',
   profileImage: '/profile-images/default-profile-image.png', // 정적 경로로 설정
+  averageRating: 0,
 });
 
 const triggerFileInput = () => {
@@ -196,6 +197,18 @@ const getUser = async (userId) => {
     console.error('Failed to fetch user:', error);
   }
 };
+const getAverageRating = async (userId) => {
+  try {
+    const ratingResponse = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/reviews/host/${userId}/average`,
+      { withCredentials: true }
+    );
+    user.averageRating = ratingResponse.data.average || 0;
+  } catch (error) {
+    console.error('Failed to fetch average rating: ', error);
+  }
+}
+
 
 // 탭별 이벤트 데이터
 const hostEvents = ref([]);
@@ -252,6 +265,7 @@ onMounted(() => {
 
   const wantShowUserId = window.location.pathname.split('/').pop(); // Extract event ID from URL
   getUser(wantShowUserId);
+  getAverageRating(wantShowUserId); // 평균 평점 가져오기
   fetchAllEvents(); // 디폴트 탭 데이터
 });
 </script>
