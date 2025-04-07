@@ -137,7 +137,6 @@ export default {
             withCredentials: true, // 인증 정보를 포함
           }
         );
-
         isLiked.value = response.data.isLiked; // 서버에서 받은 상태로 초기화
       } catch (error) {
         console.error('Failed to initialize like status:', error);
