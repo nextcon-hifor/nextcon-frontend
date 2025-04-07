@@ -53,24 +53,12 @@
           <!-- 통합 검색 입력 필드 -->
           <div class="form-group">
             <label for="">Nationality</label>
-            <input
-              type="text"
-              v-model="searchQuery"
-              @focus="showDropdown = true"
-              @blur="hideDropdown"
-              @input="filterCountries"
-              placeholder="Search for a country..."
-              class="search-input"
-              required
-            />
+            <input type="text" v-model="searchQuery" @focus="showDropdown = true" @blur="hideDropdown"
+              @input="filterCountries" placeholder="Search for a country..." class="search-input" required />
             <!-- 드롭다운 -->
             <ul v-if="showDropdown" class="dropdown-list">
-              <li
-                v-for="country in filteredCountries.slice(0,5)"
-                :key="country.code"
-                @mousedown="selectCountry(country)"
-                class="dropdown-item"
-              >
+              <li v-for="country in filteredCountries.slice(0, 5)" :key="country.code"
+                @mousedown="selectCountry(country)" class="dropdown-item">
                 {{ country.name }}
               </li>
             </ul>
@@ -86,20 +74,23 @@
 
           <div v-for="(checkbox, index) in checkboxes" :key="index" class="checkbox-item">
             <label>
-                  <span v-if="index === 0">
-                    I accept and agree to the <span class="popup-link" @click="openPopup(0)">Terms of use</span> (Required)
-                  </span>
+              <span v-if="index === 0">
+                I accept and agree to the <span class="popup-link" @click="openPopup(0)">Terms of use</span> (Required)
+              </span>
               <span v-else-if="index === 1">
-                    I accept and agree to the <span class="popup-link" @click="openPopup(1)">Privacy policy.</span> (Required)
-                  </span>
+                I accept and agree to the <span class="popup-link" @click="openPopup(1)">Privacy policy.</span>
+                (Required)
+              </span>
               <span v-else-if="index === 2">
-                    I agree <span class="popup-link" @click="openPopup(2)">to collect and use personal information for the purpose of receiving and promoting marketing.</span> (Optional)
-                  </span>
+                I agree <span class="popup-link" @click="openPopup(2)">to collect and use personal information for the
+                  purpose of receiving and promoting marketing.</span> (Optional)
+              </span>
             </label>
             <input type="checkbox" v-model="checkbox.checked" />
           </div>
         </div>
-        <button type="button" class="btn-primary handel-register-btn" :disabled="!requiredChecked" @click="handleRegister">Sign up</button>
+        <button type="button" class="btn-primary handel-register-btn" :disabled="!requiredChecked"
+          @click="handleRegister">Sign up</button>
 
       </form>
     </div>
@@ -391,7 +382,7 @@ const handleRegister = async () => {
     console.log('hihiS')
     return; // 제출 중단
   }
-  console.log('핸들레지스터의 유저:',user)
+  console.log('핸들레지스터의 유저:', user)
   try {
     const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/user/googleSignUp`, user);
     console.log('회원가입 응답:', response.data);
@@ -429,333 +420,368 @@ onMounted(() => {
 
 <!-- css -->
 <style scoped>
-  /* 반응형 모바일 css */
-  @media screen and (max-width:768px){
-    .create-image{
-      display: none;
-    }
-    .login-container{
-      padding: 15px;
-      padding-top: 30px;
-      margin-top: 50px;
-      justify-items: center;
-    }
-    .create-form h1{
-      color: #58C3FF;
-      text-align: center;
-    }
-    .create-form p{
-      color: #555;
-      text-align: center;
-      padding: 5px 50px;
-    }
-    .create-form label{
-      font-size: 14px;
-      color: #555;
-      width: 100%;
-    }
-    .create-form input{
-      width: 100%;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 10px;
-    }
-    .create-form select{
-      width: 100%;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      padding: 10px;
-    }
-    .email-box{
-      width: 60%;
-    }
-    .code-btn-box{
-      align-content: end;
-      width: 40%;
-    }
-    .code-btn{
-      background-color: #58C3FF;
-      border: none;
-      color: #FFFFFF;
-      padding: 10px 8px;
-      border-radius: 12px;
-      font-size: 14px;
-    }
-    .agree-box{
-      margin-top: 30px;
-    }
-    .agree-all {
-      background-color: #58C3FF;
-      border: none;
-      border-radius: 16px;
-      font-size: 15px;
-      color: #fff;
-      padding: 3px;
-      padding-left: 9px;
-      padding-right: 9px;
-      margin-bottom: 16px;
-    }
-    .agree-text1 {
-      background: none;
-      border: none;
-      font-size: 14px;
-      color: #5F687A;
-      text-align: left;
-      text-decoration: underline;
-    }
-    .agree-cb-box{
-      padding: 0px;
-      align-content: center;
-    }
-    .agree-cb{
-      width: 12px;
-      height: 12px;
-    }
-    .btn-primary {
-      background-color: #58C3FF;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      width: 100%;
-      height: 50px;
-      font-size: 16px;
-      border-radius: 12px;
-      cursor: pointer;
-      margin: 20px 0px;
-      transition: all 0.3s ease;
-    }
-    .popup-link{
-      text-decoration: underline;
-    }
-    .checkbox-item{
-      align-items: center;
-    }
-    .checkbox-item label{
-      width: 90%;
-    }
-    .checkbox-item input{
-      width: 14px;
-    }
+/* 반응형 모바일 css */
+@media screen and (max-width:768px) {
+  .create-image {
+    display: none;
   }
-  /* 웹 */
-  @media screen and (min-width:769px){
-    .checkbox-item label{
-      width: min-content;
-      min-width: 420px;
-    }
-    .checkbox-item input{
-      width: 15px;
-      height: 100%;
-    }
-      .login-container {
-          display: flex;
-          background: #fff;
-          border-radius: 10px;
-          overflow: hidden;
-          width: 100%;
-          min-height: 680px;
-          padding: 30px 150px;
-          max-width: 1470px;
-          justify-self: center;
 
-      }
-
-      .create-form {
-          flex: 1;
-          padding: 40px;
-          max-width: 720px;
-          align-content: center;
-      }
-
-      .login-form h1 {
-          font-size: 36px;
-          font-weight: bold;
-          margin-bottom: 10px;
-      }
-
-      .login-form p {
-          color: #777;
-          margin-bottom: 20px;
-      }
-
-      .form-group {
-          margin-bottom: 20px;
-      }
-
-      .form-group label {
-          display: block;
-          font-size: 14px;
-          margin-bottom: 5px;
-          color: #333;
-      }
-
-      .form-group input {
-          width: 100%;
-          height: 50px;
-          padding: 10px;
-          font-size: 16px;
-          border: 1px solid #ccc;
-          border-radius: 12px;
-          box-sizing: border-box;
-      }
-
-      .form-group select {
-          width: 100%;
-          height: 50px;
-          padding: 10px;
-          font-size: 16px;
-          border: 1px solid #ccc;
-          border-radius: 12px;
-          box-sizing: border-box;
-      }
-
-      .password-group {
-          position: relative;
-      }
-
-      .toggle-password {
-          position: absolute;
-          right: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-          cursor: pointer;
-      }
-
-      .form-options {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-      }
-
-      .form-options label {
-          font-size: 16px;
-          color: #555;
-      }
-
-      .btn-primary {
-          background-color: #58C3FF;
-          color: #fff;
-          border: none;
-          padding: 10px;
-          width: 100%;
-          height: 50px;
-          font-size: 16px;
-          border-radius: 12px;
-          cursor: pointer;
-          margin-bottom: 20px;
-          transition: all 0.3s ease;
-      }
-
-      .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .divider {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 20px 0;
-          color: #aaa;
-      }
-
-      .divider span {
-          background: #fff;
-          padding: 0 10px;
-      }
-
-      .create-image {
-          flex: 1;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background-image: url('/assets/img/img_LogInBanner2.png');
-          width: 100%;
-          background-repeat: no-repeat;
-          background-size: cover;
-          background-position: bottom;
-          border-radius: 24px;
-          margin: 10px;
-      }
-
-      .banner-title{
-          width: 100%;
-          height: 100%;
-          padding: 45px;
-          font-size: 48px;
-          font-weight: bold;
-          color: #FFFFFF;
-      }
-      .code-btn-box{
-          align-content: end;
-      }
-      .code-btn{
-          background-color: #58C3FF;
-          border: none;
-          color: #FFFFFF;
-          padding: 13px 26px;
-          border-radius: 12px;
-      }
-
-
-    .agree-box{
-      margin-top: 64px;
-      margin-bottom: 48px;
-    }
-    .agree-all{
-      background-color: #58C3FF;
-      border: none;
-      border-radius: 16px;
-      font-size: 15px;
-      color: #fff;
-      padding: 3px;
-      padding-left: 9px;
-      padding-right: 9px;
-      margin-bottom: 16px;
-    }
-    .agree-text1{
-      background: none;
-      border: none;
-      color: #5F687A;
-      text-align: left;
-      text-decoration: underline;
-    }
-    .agree-cb-box{
-      align-content: center;
-    }
-    .agree-cb{
-      accent-color: #58C3FF;
-    }
-
-    .ca-btn-box{
-      text-align: center;
-      margin-top: 90px;
-      margin-bottom: 120px;
-    }
-    .ca-btn{
-      font-size: 20px;
-      border: none;
-      background-color: #58C3FF;
-      border-radius: 16px;
-      padding: 12px;
-      padding-left: 48px;
-      padding-right: 48px;
-      color: #fff;
-    }
-    .dropdown-list{
-      position: absolute;
-      background-color: #fff;
-    }
-    .popup-link{
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    .handel-register-btn:disabled {
-      background-color: #ccc; /* 비활성화 시 배경 회색 */
-      cursor: not-allowed; /* 마우스 커서 비활성화 */
-      opacity: 0.6; /* 흐리게 */
-    }
+  .login-container {
+    padding: 15px;
+    padding-top: 30px;
+    margin-top: 50px;
+    justify-items: center;
   }
+
+  .create-form h1 {
+    color: #58C3FF;
+    text-align: center;
+  }
+
+  .create-form p {
+    color: #555;
+    text-align: center;
+    padding: 5px 50px;
+  }
+
+  .create-form label {
+    font-size: 14px;
+    color: #555;
+    width: 100%;
+  }
+
+  .create-form input {
+    width: 100%;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .create-form select {
+    width: 100%;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .email-box {
+    width: 60%;
+  }
+
+  .code-btn-box {
+    align-content: end;
+    width: 40%;
+  }
+
+  .code-btn {
+    background-color: #58C3FF;
+    border: none;
+    color: #FFFFFF;
+    padding: 10px 8px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .agree-box {
+    margin-top: 30px;
+  }
+
+  .agree-all {
+    background-color: #58C3FF;
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    color: #fff;
+    padding: 3px;
+    padding-left: 9px;
+    padding-right: 9px;
+    margin-bottom: 16px;
+  }
+
+  .agree-text1 {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #5F687A;
+    text-align: left;
+    text-decoration: underline;
+  }
+
+  .agree-cb-box {
+    padding: 0px;
+    align-content: center;
+  }
+
+  .agree-cb {
+    width: 12px;
+    height: 12px;
+  }
+
+  .btn-primary {
+    background-color: #58C3FF;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    height: 50px;
+    font-size: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin: 20px 0px;
+    transition: all 0.3s ease;
+  }
+
+  .popup-link {
+    text-decoration: underline;
+  }
+
+  .checkbox-item {
+    align-items: center;
+  }
+
+  .checkbox-item label {
+    width: 90%;
+  }
+
+  .checkbox-item input {
+    width: 14px;
+  }
+}
+
+/* 웹 */
+@media screen and (min-width:769px) {
+  .checkbox-item label {
+    width: min-content;
+    min-width: 420px;
+  }
+
+  .checkbox-item input {
+    width: 15px;
+    height: 100%;
+  }
+
+  .login-container {
+    display: flex;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    min-height: 680px;
+    padding: 30px 150px;
+    max-width: 1470px;
+    justify-self: center;
+
+  }
+
+  .create-form {
+    flex: 1;
+    padding: 40px;
+    max-width: 720px;
+    align-content: center;
+  }
+
+  .login-form h1 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .login-form p {
+    color: #777;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #333;
+  }
+
+  .form-group input {
+    width: 100%;
+    height: 50px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+
+  .form-group select {
+    width: 100%;
+    height: 50px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+
+  .password-group {
+    position: relative;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+
+  .form-options {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .form-options label {
+    font-size: 16px;
+    color: #555;
+  }
+
+  .btn-primary {
+    background-color: #58C3FF;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    height: 50px;
+    font-size: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    color: #aaa;
+  }
+
+  .divider span {
+    background: #fff;
+    padding: 0 10px;
+  }
+
+  .create-image {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url('/assets/img/img_LogInBanner2.png');
+    width: 100%;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: bottom;
+    border-radius: 24px;
+    margin: 10px;
+  }
+
+  .banner-title {
+    width: 100%;
+    height: 100%;
+    padding: 45px;
+    font-size: 48px;
+    font-weight: bold;
+    color: #FFFFFF;
+  }
+
+  .code-btn-box {
+    align-content: end;
+  }
+
+  .code-btn {
+    background-color: #58C3FF;
+    border: none;
+    color: #FFFFFF;
+    padding: 13px 26px;
+    border-radius: 12px;
+  }
+
+
+  .agree-box {
+    margin-top: 64px;
+    margin-bottom: 48px;
+  }
+
+  .agree-all {
+    background-color: #58C3FF;
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    color: #fff;
+    padding: 3px;
+    padding-left: 9px;
+    padding-right: 9px;
+    margin-bottom: 16px;
+  }
+
+  .agree-text1 {
+    background: none;
+    border: none;
+    color: #5F687A;
+    text-align: left;
+    text-decoration: underline;
+  }
+
+  .agree-cb-box {
+    align-content: center;
+  }
+
+  .agree-cb {
+    accent-color: #58C3FF;
+  }
+
+  .ca-btn-box {
+    text-align: center;
+    margin-top: 90px;
+    margin-bottom: 120px;
+  }
+
+  .ca-btn {
+    font-size: 20px;
+    border: none;
+    background-color: #58C3FF;
+    border-radius: 16px;
+    padding: 12px;
+    padding-left: 48px;
+    padding-right: 48px;
+    color: #fff;
+  }
+
+  .dropdown-list {
+    position: absolute;
+    background-color: #fff;
+  }
+
+  .popup-link {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .handel-register-btn:disabled {
+    background-color: #ccc;
+    /* 비활성화 시 배경 회색 */
+    cursor: not-allowed;
+    /* 마우스 커서 비활성화 */
+    opacity: 0.6;
+    /* 흐리게 */
+  }
+}
 </style>

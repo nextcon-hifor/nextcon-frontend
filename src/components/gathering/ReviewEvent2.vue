@@ -11,15 +11,13 @@
           <label for="">Please rate a star</label>
           <div class="star-rating">
             <div class="stars-container">
-              <span v-for="star in 5" :key="star" class="star-container">
-                <span @mouseover="hoverRating = star - 0.5" @mouseleave="hoverRating = 0" @click="setRating(star - 0.5)"
-                  class="star-half left-half"></span>
-                <span @click="setRating(star)" @mouseover="hoverRating = star" @mouseleave="hoverRating = 0"
-                  class="star-half right-half"></span>
+            <span v-for="star in 5" :key="star" class="star-container">
+              <span @mouseover="hoverRating = star -0.5" @mouseleave="hoverRating = 0" @click="setRating(star-0.5)" class="star-half left-half"></span>
+              <span @click="setRating(star)" @mouseover="hoverRating = star" @mouseleave="hoverRating = 0" class="star-half right-half"></span>
 
-                <!-- 실제 별 표시 (겹쳐서 보여짐) -->
-                <i :class="getStarClass(star)" class="star-icon"></i>
-              </span>
+              <!-- 실제 별 표시 (겹쳐서 보여짐) -->
+              <i :class="getStarClass(star)" class="star-icon"></i>
+            </span>
             </div>
             <span class="rating-value">{{ form.rating.toFixed(1) }} / 5</span>
           </div>
@@ -28,7 +26,7 @@
         <div class="form-group">
           <label for="details">Review Text</label>
           <div class="editor-container">
-            <EditorContent v-if="editor" :editor="editor" class="editor" />
+           <EditorContent v-if="editor" :editor="editor" class="editor" />
           </div>
         </div>
 
@@ -45,6 +43,7 @@ import { Editor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+//import CharacterCount from '@tiptap/extension-character-count'; // 글자 수 제한 이 확장 기능 추가 필요
 
 const eventId = parseInt(window.location.pathname.split('/').pop());// 🔥 eventId를 ref로 저장
 // 🔥 URL에서 이벤트 ID 가져오기
@@ -56,6 +55,7 @@ const form = ref({
 
 const editor = ref(null);
 const router = useRouter();
+const hoverRating = ref(0); // 마우스 호버링 시 별점 표시를 위한 값
 
 onMounted(() => {
   editor.value = new Editor({
@@ -72,7 +72,7 @@ onBeforeUnmount(() => {
     editor.value.destroy();
   }
 });
-
+// 0.5점 단위로 별점 설정
 const setRating = (value) => {
   form.value.rating = value;
 };
@@ -80,7 +80,7 @@ const setRating = (value) => {
 const getStarClass = (position) => {
   // 현재 평가 중인 실제 별점 값 (hover 중이면 hover 값, 아니면 설정된 값)
   const rating = hoverRating.value || form.value.rating;
-
+  
   if (rating >= position) {
     return 'fas fa-star full'; // 꽉 찬 별
   } else if (rating >= position - 0.5) {
@@ -112,19 +112,18 @@ const reviewEvent = async () => {
     const reviewData = {
       userId,
       eventId,
-      rating: form.value.rating,
-      comment: form.value.reviewText || '', // comment가 선택사항이라면 빈 문자열로 설정
+      ...form.value,
     };
 
     const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/reviews/submit`,
+      `${import.meta.env.VITE_API_BASE_URL}/review/submit`,
       reviewData,
       { withCredentials: true }
     );
 
     console.log('✅ [SUCCESS] Review submitted:', response.data);
     alert('Review submitted successfully!');
-    await router.push(`/events/${eventId}`);
+    await router.push(`/reviews/${response.data.review.id}`);
   } catch (error) {
     console.error('❌ [ERROR] Failed to submit review:', error);
     if (error.response) {
@@ -194,24 +193,20 @@ const reviewEvent = async () => {
     color: #5F687A;
     line-height: 1.5;
   }
-
-  .star-rating {
+  .star-rating{
     display: flex;
     flex-direction: center;
     align-items: center;
     margin: 20px 0;
   }
-
   .star-container {
-    position: relative;
+    position:relative;
     cursor: pointer;
     display: inline-block;
-    height: 24px;
+    height:24px;
     margin-right: 10px;
-    width: 24px;
-    /* 별 하나의 너비 정의 */
+    width: 24px; /* 별 하나의 너비 정의 */
   }
-
   .stars-container {
     display: flex;
     align-items: center;
@@ -219,42 +214,38 @@ const reviewEvent = async () => {
     justify-content: center;
     margin-bottom: 15px;
   }
-
   .star-icon {
     font-size: 30px;
     color: #FFD700;
     position: relative;
     z-index: 1;
-    top: 0;
-    left: 0;
+    top:0;
+    left:0;
     pointer-events: none;
   }
-
   .star-half {
-    height: 24px;
-    position: absolute;
-    z-index: 3;
-    cursor: pointer;
-    opacity: 0;
-    top: 0;
+  height: 24px;
+  position: absolute;
+  z-index: 3;
+  cursor: pointer;
+  opacity:0;
+  top:0;
   }
 
   .left-half {
-    left: 0;
-    width: 12px;
+  left:0;
+  width:12px;
   }
 
   .right-half {
-    left: 12px;
-    width: 12px;
+  left: 12px;
+  width:12px;
   }
-
   .rating-value {
-    margin-left: 20px;
-    font-size: 15px;
-    font-weight: bold;
+  margin-left: 20px;
+  font-size: 15px;
+  font-weight: bold;
   }
-
   .sub-icon {
     display: none;
   }
@@ -267,23 +258,22 @@ const reviewEvent = async () => {
   /* 폼 그룹 */
   .form-group {
     margin-bottom: 20px;
-    display: flex;
+    display:flex;
     flex-direction: column;
-    align-items: center;
+    align-items:center;
     width: 100%;
-    max-width: 100%;
+    max-width:100%;
     overflow: hidden;
 
   }
-
   .form-group .editor-container {
-    width: 600px;
-    max-width: 100%;
-    height: 150px;
-    max-height: 150px;
-    overflow: hidden;
+  width: 600px;
+  max-width: 100%;
+  height: 150px;
+  max-height: 150px;
+  overflow: hidden;
   }
-
+  
   .form-group label {
     font-size: 14px;
   }
@@ -296,8 +286,8 @@ const reviewEvent = async () => {
   .form-group select,
   .form-group textarea {
     width: 100%;
-    max-width: 100%;
-    overflow: hidden;
+    max-width:100%;
+    overflow:hidden;
     font-size: 14px;
     box-sizing: border-box;
     display: block;
@@ -519,23 +509,21 @@ const reviewEvent = async () => {
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
-
   .form-group {
     margin-bottom: 20px;
-    display: flex;
+    display:flex;
     flex-direction: column;
-    align-items: center;
+    align-items:center;
     width: 100%;
     max-width: 100%;
     overflow: hidden;
   }
-
   .form-group .editor-container {
-    width: 600px;
-    max-width: 100%;
-    height: 150px;
-    max-height: 150px;
-    overflow: hidden;
+  width: 600px;
+  max-width: 100%;
+  height: 150px;
+  max-height: 150px;
+  overflow: hidden;
   }
 
   .form-group label {
@@ -792,51 +780,44 @@ const reviewEvent = async () => {
   .editor {
     border: 1px solid #ddd;
     padding: 10px;
-    border-radius: 5px;
-    width: 600px;
-    max-width: 100%;
-    height: 150px;
-    min-height: 150px;
-    max-height: 150px;
+    border-radius:5px;
+    width:600px;
+    max-width:100%;
+    height:150px;
+    min-height:150px;
+    max-height:150px;
     overflow-x: hidden;
-    overflow-y: auto;
-    margin-bottom: 20px;
-    resize: none;
-    word-wrap: break-word;
-    /* 긴 단어 줄바꿈 */
-    white-space: normal;
-    /* 텍스트 줄바꿈 허용 */
+    overflow-y:auto;
+    margin-bottom:20px;
+    resize:none;
+    word-wrap: break-word; /* 긴 단어 줄바꿈 */
+    white-space: normal; /* 텍스트 줄바꿈 허용 */
     margin: 0 auto;
     box-sizing: border-box;
   }
-
   .editor .ProseMirror {
-    outline: none;
-    height: 100%;
-    max-height: 100%;
-    width: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    word-wrap: break-word;
+  outline: none;
+  height: 100%;
+  max-height:100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y:auto;
+  word-wrap:break-word;
   }
-
-  .star-rating {
+  .star-rating{
     display: flex;
     flex-direction: center;
     align-items: center;
     margin: 20px 0;
   }
-
   .star-container {
     position: relative;
     cursor: pointer;
     display: inline-block;
-    height: 24px;
+    height:24px;
     margin-right: 10px;
-    width: 24px;
-    /* 별 하나의 너비 정의 */
+    width: 24px; /* 별 하나의 너비 정의 */
   }
-
   .stars-container {
     display: flex;
     align-items: center;
@@ -844,40 +825,37 @@ const reviewEvent = async () => {
     justify-content: center;
     margin-bottom: 15px;
   }
-
   .star-icon {
     font-size: 30px;
     color: #FFD700;
     position: relative;
     z-index: 1;
-    top: 0;
-    left: 0;
+    top:0;
+    left:0;
     pointer-events: none;
   }
-
   .star-half {
-    height: 24px;
-    position: absolute;
-    z-index: 3;
-    cursor: pointer;
-    opacity: 0;
-    top: 0;
+  height: 24px;
+  position: absolute;
+  z-index: 3;
+  cursor: pointer;
+  opacity:0;
+  top:0;
   }
 
   .left-half {
-    left: 0;
-    width: 12px;
+  left:0;
+  width:12px;
   }
 
   .right-half {
-    left: 12px;
-    width: 12px;
+  left: 12px;
+  width:12px;
   }
-
   .rating-value {
-    margin-left: 20px;
-    font-size: 15px;
-    font-weight: bold;
+  margin-left: 20px;
+  font-size: 15px;
+  font-weight: bold;
   }
 
 }

@@ -83,10 +83,11 @@
                 <div class="col-12 p-0">
                   <p class="s-card-text4">
                     <span v-for="star in 5" :key="star">
-                      <i :class="star <= 3.5 ? 'fas fa-star' : 'far fa-star'" style="font-size: 24px;"></i>
+                      <i :class="star <= event.averageRating ? 'fas fa-star' : 'far fa-star'"
+                        style="font-size: 24px;"></i>
                     </span> <!--event.rate-->
                     <span class="rating-text" style="margin-left: 10px; font-size: 16px; color: #555;">
-                      {{ 3.5 }} <!--event.rate.toFixed(1)-->
+                      {{ event.averageRating }} <!--event.rate.toFixed(1)-->
                     </span>
                   </p>
                 </div>
@@ -99,7 +100,8 @@
                 </router-link>
 
                 <div class="p-0">
-                  <router-link :to="`/reviewEvent/${event.id}`">
+                  <router-link v-if="!hasReviewed && !isParticipating && userId && isEventJoinable"
+                    :to="`/reviewEvent/${event.id}`">
                     <button class="review-btn">
                       Review
                     </button>
@@ -237,7 +239,7 @@
 
     <!-- card info -->
     <div class="m-box">
-      <router-link :to="`/hosts/${event.createdBy.userId}`" class="p-0">
+      <router-link :to="`/userPage/${event.createdBy.userId}`" class="p-0">
         <p class="card-host">
           {{ event.createdBy.username }}
         </p>
@@ -321,7 +323,10 @@ export default {
       createdBy: { name: '', id: 0, profileImage: '' },
       price: 0,
       question: '',
+      averageRating: 0,
     });
+    const reviews = ref([]); // 리뷰 목록
+    const hasReviewed = ref(false);
     const dateForCalender = computed(() => {
       const dateObj = new Date(event.value.date);
       return dateObj.getDate().toString().padStart(2, '0'); // 2자리 숫자로 변환
@@ -386,9 +391,28 @@ export default {
         };
         const userId = sessionStorage.getItem('userId')
         isLiked.value = eventData.likes.some((like) => like.user.userId === userId);
+        const ratingResponse = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/reviews/host/${eventData.createdBy.userId}/average`,
+          { withCredentials: true }
+        );
+        event.value.averageRating = ratingResponse.data.average || 0;
+
+        // 리뷰 데이터 가져오기
+        const reviewsResponse = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${eventId}`,
+          { withCredentials: true }
+        );
+
+        reviews.value = reviewsResponse.data; // 리뷰 데이터 저장
+        hasReviewed.value = reviews.value.some(
+          (review) => review.user.userId === userId
+        ); // 현재 사용자가 리뷰를 작성했는지 확인
+
       } catch (error) {
         console.error("Error fetching event data:", error);
       }
+
+
     };
 
     // 날짜 및 시간 비교를 위한 computed property
@@ -566,6 +590,8 @@ export default {
       imagesToDisplay,
       iframeUrl,
       dateForCalender,
+      reviews,
+      hasReviewed,
     };
   },
 };
