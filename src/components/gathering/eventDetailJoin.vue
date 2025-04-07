@@ -392,10 +392,12 @@ export default {
         const userId = sessionStorage.getItem('userId')
         isLiked.value = eventData.likes.some((like) => like.user.userId === userId);
         const ratingResponse = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/reviews/host/${eventData.createdBy.userId}/average`,
+          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${eventId}`,
           { withCredentials: true }
         );
-        event.value.averageRating = ratingResponse.data.average || 0;
+        const ratings = ratingResponse.data.map(review => review.rating);
+        const totalRating = ratings.reduce((sum, rating) => sum + rating, 0);
+        event.value.averageRating = ratings.length ? (totalRating / ratings.length).toFixed(1) : 0;
 
         // 리뷰 데이터 가져오기
         const reviewsResponse = await axios.get(
