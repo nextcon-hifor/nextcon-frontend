@@ -20,6 +20,7 @@ import EventApprove from "../components/gathering/EventApprove.vue";
 import EventDetailJoin from "../components/gathering/eventDetailJoin.vue";
 import ReviewEvent from "@/components/gathering/ReviewEvent.vue";
 import CreateBlog from "@/components/header/CreateBlog.vue";
+import SeeReviews from "@/components/header/SeeReviews.vue";
 
 const routes = [
     {
@@ -130,6 +131,12 @@ const routes = [
         path: "/userPage/:userId",
         name: "UserPage",
         component: UserPage,
+        meta: { hideHeaderFooter: false },
+    },
+    {
+        path: "/reviews/:userId",
+        name: "SeeReviews",
+        component: SeeReviews,
         meta: { hideHeaderFooter: false },
     },
     {

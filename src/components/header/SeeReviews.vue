@@ -27,14 +27,12 @@
             </div>
           </div>
           <div class="stars-container">
-            <router-link :to="`/reviews/${wantShowUserId}`">
-              <span v-for="star in 5" :key="star">
-                <i :class="star <= user.averageRating ? 'fas fa-star' : 'far fa-star'" style="font-size: 24px;"></i>
-              </span> <!--event.rate-->
-              <span class="host-info-num" style="margin-left: 10px; font-size: 16px; color: #555;">
-                {{ user.averageRating }} <!--event.rate.toFixed(1)-->
-              </span>
-            </router-link>
+            <span v-for="star in 5" :key="star" @click="goToSeeReviews">
+              <i :class="star <= user.averageRating ? 'fas fa-star' : 'far fa-star'" style="font-size: 24px;"></i>
+            </span> <!--event.rate-->
+            <span class="host-info-text" style="margin-left: 10px; font-size: 16px; color: #555;">
+              {{ user.averageRating }} <!--event.rate.toFixed(1)-->
+            </span>
           </div>
         </div>
       </div>
@@ -53,12 +51,6 @@
                     <div class="col-8">
                       <p class="mp-event-title">{{ event.title }}</p>
                       <span>{{ event.participants }}</span>/<span>{{ event.maxParticipants }}</span>
-                      <div class="event-rating">
-                        <i class="fas fa-star"></i>
-                        <span>
-                          {{ event.averageRating }}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -84,15 +76,6 @@
                           {{ event.host }}
                         </router-link>
                       </p>
-                      <!-- 리뷰 버튼-->
-                      <router-link v-if="currentUserId === wantShowUserId && !event.hasReviewed"
-                        :to="`/reviewEvent/${event.id}`" class="review-btn">
-                        리뷰 작성
-                      </router-link>
-                      <button v-if="currentUserId === wantShowUserId && event.hasReviewed" class="review-btn completed"
-                        disabled>
-                        리뷰 완료
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -251,49 +234,14 @@ const fetchAllEvents = async () => {
       `${import.meta.env.VITE_API_BASE_URL}/events/getEventsByHostId/${wantShowUserId}`,
       { withCredentials: true }
     );
-    // 이벤트 데이터 매핑 및 리뷰 데이터 추가
-    hostEvents.value = await Promise.all(
-      hostResponse.data.map(async (event) => {
-        const mappedEvent = mapEventData(event);
-
-        // 리뷰 데이터 가져오기
-        const ratingResponse = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
-          { withCredentials: true }
-        );
-
-        const ratings = ratingResponse.data.map((review) => review.rating);
-        const totalRating = ratings.reduce((sum, rating) => sum + rating, 0);
-        mappedEvent.averageRating = ratings.length
-          ? (totalRating / ratings.length).toFixed(1)
-          : '리뷰 없음';
-
-        return mappedEvent;
-      })
-    );
+    hostEvents.value = hostResponse.data.map(mapEventData);
 
     // Participated 이벤트 가져오기
     const participatedResponse = await axios.get(
       `${import.meta.env.VITE_API_BASE_URL}/participants/getParticipatedEvent/${wantShowUserId}`,
       { withCredentials: true }
     );
-    participatedEvents.value = await Promise.all(
-      participatedResponse.data.map(async (event) => {
-        const mappedEvent = mapEventData(event);
-
-        // 리뷰 데이터 가져오기
-        const reviewResponse = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
-          { withCredentials: true }
-        );
-
-        mappedEvent.hasReviewed = reviewResponse.data.some(
-          (review) => review.user.userId === currentUserId.value
-        );
-
-        return mappedEvent;
-      })
-    )
+    participatedEvents.value = participatedResponse.data.map(mapEventData);
 
     // Liked 이벤트 가져오기
     const likedResponse = await axios.get(
@@ -311,6 +259,10 @@ const fetchAllEvents = async () => {
 const getParticipantsTotal = () => {
   return hostEvents.value.reduce((total, event) => total + (event.participants || 0), 0);
 };
+
+const goToSeeReviews = () => {
+  window.location.href = `/reviews/${wantShowUserId}`;
+}
 
 // mounted 훅
 onMounted(() => {
@@ -473,26 +425,6 @@ a {
   color: #FFD700;
   margin-top: 10px;
   gap: 1px;
-  cursor: pointer;
-}
-
-.review-btn {
-  background-color: #ccc;
-  color: white;
-  border: none;
-  border-radius: 1px;
-  padding: 5px 10px;
-  font-size: 14px;
-  cursor: pointer;
-  margin-top: 10px;
-  margin-left: 20px;
-  white-space: nowrap;
-  display: inline-block;
-}
-
-.review-btn.completed {
-  color: gray;
-  cursor: not-allowed;
 }
 
 /* 반응형 스타일 */
@@ -521,17 +453,6 @@ a {
 
   .mp-event-title {
     font-size: 14px;
-  }
-
-  .review-btn {
-    font-size: 12px;
-    padding: 4px 8px;
-    margin-left: 10px;
-  }
-
-  .review-btn.completed {
-    font-size: 12px;
-    padding: 4px 8px;
   }
 }
 </style>
