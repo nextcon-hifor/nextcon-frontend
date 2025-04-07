@@ -54,6 +54,7 @@ const form = ref({
   comment: '',
 });
 
+const hoverRating = ref(0);
 const editor = ref(null);
 const router = useRouter();
 
@@ -808,6 +809,7 @@ const reviewEvent = async () => {
     /* 텍스트 줄바꿈 허용 */
     margin: 0 auto;
     box-sizing: border-box;
+
   }
 
   .editor .ProseMirror {
