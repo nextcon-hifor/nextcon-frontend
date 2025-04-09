@@ -25,7 +25,9 @@
           </label>
         </div>
 
-        <button type="submit" class="btn-primary">Sign in</button>
+        <button type="submit" class="btn-primary" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
+          </button>
 
       </form>
 
@@ -64,6 +66,7 @@ export default {
   setup() {
     const store = useStore(); // Vuex store에 접근
     const router = useRouter(); // Vue Router에 접근
+    const isSubmitting = ref(false); // 추가: 제출 중 상태를 추적
     const form = ref({
       userId: '',
       password: ''
@@ -75,6 +78,8 @@ export default {
     };
 
     const handleLogin = async () => {
+      if (isSubmitting.value) return;
+      isSubmitting.value = true; // 제출 시작
       try {
         // 로그인 처리 로직 (Axios를 사용해 백엔드 API 호출)
         const response = await axios.post(
@@ -104,7 +109,10 @@ export default {
       } catch (error) {
         console.error('로그인 오류:', error);
         alert('Your HiFor Username or Password is incorrect');
-      }
+      }finally {
+    // 성공하든 실패하든 제출 상태 초기화
+    isSubmitting.value = false;
+  }
     };
 
     const handleGoogleLogin = () => {
@@ -122,6 +130,7 @@ export default {
       handleFindUsername,
       isPasswordVisible,
       togglePasswordVisibility,
+      isSubmitting,
     };
   }
 

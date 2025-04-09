@@ -100,7 +100,7 @@
                 </router-link>
 
                 <div class="p-0">
-                  <router-link v-if="!hasReviewed && !isParticipating && userId && isEventJoinable"
+                  <router-link v-if="!hasReviewed && isParticipating && userId && isEventJoinable"
                     :to="`/reviewEvent/${event.id}`">
                     <button class="review-btn">
                       Review

@@ -29,6 +29,9 @@
           <label for="details">Review Text</label>
           <div class="editor-container">
             <EditorContent v-if="editor" :editor="editor" class="editor" />
+            <div class="character-counter" :class="{ 'limit-reached': characterCount >= 300 }">
+                {{ characterCount }}/300 characters
+            </div>
           </div>
         </div>
 
@@ -45,6 +48,7 @@ import { Editor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import CharacterCount from '@tiptap/extension-character-count';
 
 const eventId = parseInt(window.location.pathname.split('/').pop());// 🔥 eventId를 ref로 저장
 // 🔥 URL에서 이벤트 ID 가져오기
@@ -52,19 +56,45 @@ const eventId = parseInt(window.location.pathname.split('/').pop());// 🔥 even
 const form = ref({
   rating: 0,
   comment: '',
+  reviewText: '',
 });
-
+const characterCount = ref(0);
 const hoverRating = ref(0);
 const editor = ref(null);
 const router = useRouter();
+const maxCharacterLimit = 300;
 
 onMounted(() => {
   editor.value = new Editor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      CharacterCount.configure({
+        limit: maxCharacterLimit,
+      }),
+    ],
     content: '',
     onUpdate: ({ editor }) => {
       form.value.reviewText = editor.getHTML();
+      characterCount.value = editor.getText().length;
     },
+    editorProps: {
+      handleKeyDown: (view, event) => {
+        // 현재 텍스트 길이 확인
+        const textLength = view.state.doc.textContent.length;
+        
+        // Backspace나 Delete 키는 항상 허용
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+          return false;
+        }
+        
+        // 300자 이상이고 텍스트 입력 시도인 경우 입력 차단
+        if (textLength >= maxCharacterLimit && event.key.length === 1) {
+          return true; // 이벤트 처리 완료 (더 이상 입력 안 됨)
+        }
+        
+        return false; // 기본 처리 계속 진행
+      }
+    }
   });
 });
 
@@ -102,7 +132,11 @@ const reviewEvent = async () => {
       alert('Please write a review.');
       return;
     }*/
-
+     // 여기에 코드 추가
+    if (characterCount.value > maxCharacterLimit) {
+      alert(`Your review is too long. Please limit it to ${maxCharacterLimit} characters.`);
+      return;
+    }
     const userId = sessionStorage.getItem('userId');
     if (!userId) {
       alert('Login is required.');
@@ -144,10 +178,22 @@ const reviewEvent = async () => {
   }
 
 };
+
 </script>
 
 <!-- css -->
 <style scoped>
+  .character-counter {
+  text-align: right;
+  margin-top: 5px;
+  font-size: 14px;
+  color: #666;
+  }
+
+  .limit-reached {
+  color: #d9534f;
+  font-weight: bold;
+  }
 /* 반응형 모바일 css */
 @media screen and (max-width: 768px) {
 

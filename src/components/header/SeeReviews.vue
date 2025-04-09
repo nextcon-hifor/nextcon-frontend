@@ -490,6 +490,11 @@ a {
   margin: 10px 0;
   white-space: pre-line;
   color: #555;
+  word-wrap: break-word;       /* 추가: 긴 단어 줄바꿈 */
+  overflow-wrap: break-word;   /* 추가: 모던 브라우저 지원 */
+  word-break: break-all;       /* 추가: 필요시 모든 문자에서 줄바꿈 */
+  max-width: 100%;             /* 추가: 최대 너비 제한 */
+  overflow: hidden;            /* 추가: 넘치는 부분 숨김 */
 }
 
 .review-footer {
