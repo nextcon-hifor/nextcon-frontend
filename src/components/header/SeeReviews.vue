@@ -39,75 +39,39 @@
 
       <!-- 우측 이벤트 영역 -->
       <div class="col-lg-8 col-md-12">
-        <!-- Hosted Events -->
+        <!-- Reviews Section -->
         <div class="events-box">
-          <p class="box-title">Hosted Event</p>
-          <div class="row">
-            <div class="col-md-6 col-sm-12" v-for="event in hostEvents" :key="event.id" :event="event">
-              <router-link :to="`/events/${event.id}`">
-                <div class="mp-card">
-                  <div class="row">
-                    <div class="col-4 mp-event-img" :style="{ backgroundImage: `url(${event.mainImage})` }"></div>
-                    <div class="col-8">
-                      <p class="mp-event-title">{{ event.title }}</p>
-                      <span>{{ event.participants }}</span>/<span>{{ event.maxParticipants }}</span>
-                    </div>
-                  </div>
-                </div>
+          <p class="box-title">Reviews about Host's Events</p>
+          <div v-if="reviews.length === 0" class="no-reviews">
+            No reviews yet
+          </div>
+          <div v-for="review in reviews" :key="review.id" class="review-card">
+            <div class="review-header">
+              <router-link :to="`/userPage/${review.user.userId}`" class="reviewer-info">
+                <img :src="review.user.profileImage || '/profile-images/default-profile-image.png'"
+                  class="reviewer-img">
+                <span class="reviewer-name">{{ review.user.username }}</span>
               </router-link>
+              <div class="review-rating">
+                <span v-for="star in 5" :key="star">
+                  <i :class="star <= review.rating ? 'fas fa-star' : 'far fa-star'"></i>
+                </span>
+                <span class="rating-value">{{ review.rating }}</span>
+              </div>
+            </div>
+            <div class="review-content">
+              {{ removeHTML(review.comment) }}
+            </div>
+            <div class="review-footer">
+              <div class="review-date">{{ formatDate(review.createdAt) }}</div>
+              <div class="review-event">
+                <router-link :to="`/events/${review.eventId}`">Event: {{ review.eventName }}</router-link>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Joined Events -->
-        <div class="events-box">
-          <p class="box-title">Joined Event</p>
-          <div class="row">
-            <div class="col-md-6 col-sm-12" v-for="event in participatedEvents" :key="event.id" :event="event">
-              <router-link :to="`/events/${event.id}`">
-                <div class="mp-card">
-                  <div class="row">
-                    <div class="col-4 mp-event-img" :style="{ backgroundImage: `url(${event.mainImage})` }"></div>
-                    <div class="col-8">
-                      <p class="mp-event-title">{{ event.title }}</p>
-                      <p class="mp-event-host" @click.stop>
-                        <router-link :to="`/userPage/${event.hostId}`">
-                          <img class="mp-host-icon" src="../../../public/assets/img/img_LogInBanner2.png" alt="Host" />
-                          {{ event.host }}
-                        </router-link>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </router-link>
-            </div>
-          </div>
-        </div>
 
-        <!-- Liked Events -->
-        <div class="events-box" v-if="currentUserId == wantShowUserId">
-          <p class="box-title">Liked Event</p>
-          <div class="row">
-            <div class="col-md-6 col-sm-12" v-for="event in likedEvents" :key="event.id" :event="event">
-              <router-link :to="`/events/${event.id}`">
-                <div class="mp-card">
-                  <div class="row">
-                    <div class="col-4 mp-event-img" :style="{ backgroundImage: `url(${event.mainImage})` }"></div>
-                    <div class="col-8">
-                      <p class="mp-event-title">{{ event.title }}</p>
-                      <p class="mp-event-host" @click.stop>
-                        <router-link :to="`/userPage/${event.hostId}`">
-                          <img class="mp-host-icon" src="../../../public/assets/img/img_LogInBanner2.png" alt="Host" />
-                          {{ event.host }}
-                        </router-link>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </router-link>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -260,8 +224,59 @@ const getParticipantsTotal = () => {
   return hostEvents.value.reduce((total, event) => total + (event.participants || 0), 0);
 };
 
-const goToSeeReviews = () => {
-  window.location.href = `/reviews/${wantShowUserId}`;
+const reviews = ref([]);
+// Date 형식 맞추는 함수수
+const formatDate = (dateString) => {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+// Function to fetch reviews for a host
+const fetchHostReviews = async (userId) => {
+  try {
+    // 유저가 개최한 모든 이벤트 가져오기
+    const hostResponse = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/events/getEventsByHostId/${userId}`,
+      { withCredentials: true }
+    );
+
+    const hostedEvents = hostResponse.data;
+    let allReviews = [];
+
+    // 각 이벤트에 대해 리뷰 가져오기기
+    for (const event of hostedEvents) {
+      try {
+        const reviewsResponse = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
+          { withCredentials: true }
+        );
+
+        // 이벤트 이름을 붙이고 리뷰 데이터 매핑
+        const eventReviews = reviewsResponse.data.map(review => ({
+          ...review,
+          eventId: event.id,
+          eventName: event.name
+        }));
+
+        allReviews = [...allReviews, ...eventReviews];
+      } catch (error) {
+        console.error(`Error fetching reviews for event ${event.id}:`, error);
+      }
+    }
+
+    // 최신순 정렬렬
+    allReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    reviews.value = allReviews;
+  } catch (error) {
+    console.error('Error fetching host reviews:', error);
+  }
+};
+
+// HTML 태그 제거 함수
+const removeHTML = (html) => {
+  if (!html) return '';
+
+  return html.replace(/<\/?[^>]+(>|$)/g, '');
 }
 
 // mounted 훅
@@ -271,6 +286,7 @@ onMounted(() => {
   getUser(wantShowUserId);
   getAverageRating(wantShowUserId); // 평균 평점 가져오기
   fetchAllEvents(); // 디폴트 탭 데이터
+  fetchHostReviews(wantShowUserId); // 리뷰 데이터 가져오기기
 });
 </script>
 
@@ -425,6 +441,70 @@ a {
   color: #FFD700;
   margin-top: 10px;
   gap: 1px;
+}
+
+/* 리뷰 디자인 추가 */
+.review-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+}
+
+.reviewer-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.reviewer-name {
+  font-weight: bold;
+}
+
+.review-rating {
+  color: #FFD700;
+}
+
+.rating-value {
+  margin-left: 5px;
+  color: #333;
+  font-weight: bold;
+}
+
+.review-content {
+  margin: 10px 0;
+  white-space: pre-line;
+  color: #555;
+}
+
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #777;
+}
+
+.no-reviews {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+  font-style: italic;
 }
 
 /* 반응형 스타일 */

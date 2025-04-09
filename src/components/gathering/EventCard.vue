@@ -107,7 +107,7 @@
 
 <script>
 import axios from 'axios';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 
 export default {
   props: {
@@ -173,10 +173,17 @@ export default {
       }
     };
 
-    // 컴포넌트가 마운트될 때 좋아요 상태 초기화
-    onMounted(() => {
-      initializeLikeStatus();
-    });
+    // 컴포넌트가 마운트될 때 좋아요 상태 초기화. -> watch로 대체
+    // onMounted(() => {
+    //   initializeLikeStatus();
+    // });
+    // 이벤트 ID를 감시하고 ID가 있을 때만 초기화 수행
+    watch(() => props.event.id, (newId) => {
+      if (newId) {
+        initializeLikeStatus(newId);
+      }
+    }, { immediate: true }); // immediate: true로 컴포넌트 생성 시 즉시 확인
+
 
     return {
       isLiked,
