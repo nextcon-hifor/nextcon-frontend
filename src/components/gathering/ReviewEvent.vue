@@ -30,9 +30,38 @@
           <div class="editor-container">
             <EditorContent v-if="editor" :editor="editor" class="editor" />
             <div class="character-counter" :class="{ 'limit-reached': characterCount >= 300 }">
-                {{ characterCount }}/300 characters
+              {{ characterCount }}/300 characters
             </div>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label for="file-upload">Event Images</label>
+          <p>
+            The first image will be the main image of the event. (Up to 5 photos)
+          </p>
+
+          <!-- 파일 입력 -->
+          <input type="file" id="file-upload" multiple accept="image/*" @change="handleFileUpload"
+            style="display: none;" />
+
+          <!-- 클릭 가능한 업로드 박스 -->
+          <div id="upload-box" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop"
+            style="border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer;">
+            <span>Click to upload or drag and drop files here</span>
+          </div>
+
+          <!-- 업로드된 파일 미리보기 및 제거 -->
+          <ul id="file-list" style="margin-top: 10px; list-style: none; padding: 0;">
+            <li v-for="(file, index) in uploadedFiles" :key="index">
+              <img :src="file.preview" alt="Preview"
+                style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;" />
+              {{ file.name }}
+              <button @click="removeFile(index)" style="margin-left: 10px; cursor: pointer; color: red;">
+                Remove
+              </button>
+            </li>
+          </ul>
         </div>
 
         <button type="submit" class="join-now-button-op2">Submit Review</button>
@@ -43,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, toRaw } from 'vue';
 import { Editor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import axios from 'axios';
@@ -81,17 +110,17 @@ onMounted(() => {
       handleKeyDown: (view, event) => {
         // 현재 텍스트 길이 확인
         const textLength = view.state.doc.textContent.length;
-        
+
         // Backspace나 Delete 키는 항상 허용
         if (event.key === 'Backspace' || event.key === 'Delete') {
           return false;
         }
-        
+
         // 300자 이상이고 텍스트 입력 시도인 경우 입력 차단
         if (textLength >= maxCharacterLimit && event.key.length === 1) {
           return true; // 이벤트 처리 완료 (더 이상 입력 안 됨)
         }
-        
+
         return false; // 기본 처리 계속 진행
       }
     }
@@ -103,9 +132,49 @@ onBeforeUnmount(() => {
     editor.value.destroy();
   }
 });
+// 이미지 파일 핸들링 로직직
+const uploadedFiles = ref([]);
+const maxFiles = 5;
+
+const handleFileUpload = (event) => {
+  const files = Array.from(event.target.files);
+  processFiles(files);
+};
+
+const handleDrop = (event) => {
+  const files = Array.from(event.dataTransfer.files);
+  processFiles(files);
+};
+
+const processFiles = (files) => {
+  if (uploadedFiles.value.length + files.length > maxFiles) {
+    alert(`You can upload up to ${maxFiles} files.`);
+    return;
+  }
+
+  files.forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedFiles.value.push({
+        file: file,
+        name: file.name,
+        preview: e.target.result,
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+const removeFile = (index) => {
+  uploadedFiles.value.splice(index, 1);
+};
+
+const triggerFileInput = () => {
+  document.getElementById('file-upload').click();
+};
 
 const setRating = (value) => {
-  form.value.rating = value;
+  form.value.rating = Number(value);
 };
 // 별의 클래스를 결정하는 함수
 const getStarClass = (position) => {
@@ -132,7 +201,7 @@ const reviewEvent = async () => {
       alert('Please write a review.');
       return;
     }*/
-     // 여기에 코드 추가
+    // 여기에 코드 추가
     if (characterCount.value > maxCharacterLimit) {
       alert(`Your review is too long. Please limit it to ${maxCharacterLimit} characters.`);
       return;
@@ -144,11 +213,35 @@ const reviewEvent = async () => {
       return;
     }
 
+    // 이미지 업로드 분리리
+    const uploadedImageUrls = [];
+    for (const fileObj of uploadedFiles.value) {
+      const rawFile = toRaw(fileObj.file); // Proxy 객체 제거
+
+      const formData = new FormData();
+      formData.append('file', rawFile);
+      const uploadResponse = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/image/upload-image-postEvent`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" }, // 파일 업로드 헤더 설정
+          withCredentials: true, // 인증 정보를 포함
+        }
+      );
+      uploadedImageUrls.push(uploadResponse.data.imageUrl);
+    }
+
+    const formattedImages = uploadedImageUrls.map(url => ({
+      id: null,  // Set to null as these are new images
+      url: url
+    }));
+
     const reviewData = {
       userId,
       eventId,
       rating: form.value.rating,
       comment: form.value.reviewText || '', // comment가 선택사항이라면 빈 문자열로 설정
+      images: formattedImages,
     };
 
     const response = await axios.post(
@@ -183,17 +276,18 @@ const reviewEvent = async () => {
 
 <!-- css -->
 <style scoped>
-  .character-counter {
+.character-counter {
   text-align: right;
   margin-top: 5px;
   font-size: 14px;
   color: #666;
-  }
+}
 
-  .limit-reached {
+.limit-reached {
   color: #d9534f;
   font-weight: bold;
-  }
+}
+
 /* 반응형 모바일 css */
 @media screen and (max-width: 768px) {
 

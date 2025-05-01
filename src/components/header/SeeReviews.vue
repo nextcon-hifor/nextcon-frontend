@@ -62,6 +62,19 @@
             <div class="review-content">
               {{ removeHTML(review.comment) }}
             </div>
+            <!-- 이미지 갤러리 추가 -->
+            <div v-if="review.images && review.images.length > 0" class="gallery-box row">
+              <p class="gallery-title">Review Photos</p>
+              <div v-if="review.images.length >= 1" class="col-6 large-box">
+                <div class="large-img" :style="{ backgroundImage: `url(${review.images[0].url})` }"></div>
+              </div>
+              <div v-if="review.images.length > 1" class="col-6">
+                <div class="row">
+                  <div class="col-6 small-box" v-for="(image, index) in review.images.slice(1, 5)" :key="index"
+                    :style="{ backgroundImage: `url(${image.url})` }"></div>
+                </div>
+              </div>
+            </div>
             <div class="review-footer">
               <div class="review-date">{{ formatDate(review.createdAt) }}</div>
               <div class="review-event">
@@ -250,11 +263,19 @@ const fetchHostReviews = async (userId) => {
           { withCredentials: true }
         );
 
+        const testImages = [
+          { id: 1, url: 'https://placehold.co/600x400' },
+          { id: 2, url: 'https://placehold.co/600x400' },
+          { id: 3, url: 'https://placehold.co/600x400' },
+          { id: 4, url: 'https://placehold.co/600x400' },
+        ];
+
         // 이벤트 이름을 붙이고 리뷰 데이터 매핑
         const eventReviews = reviewsResponse.data.map(review => ({
           ...review,
           eventId: event.id,
-          eventName: event.name
+          eventName: event.name,
+          images: review.images.length > 0 ? review.images : testImages,
         }));
 
         allReviews = [...allReviews, ...eventReviews];
@@ -490,11 +511,16 @@ a {
   margin: 10px 0;
   white-space: pre-line;
   color: #555;
-  word-wrap: break-word;       /* 추가: 긴 단어 줄바꿈 */
-  overflow-wrap: break-word;   /* 추가: 모던 브라우저 지원 */
-  word-break: break-all;       /* 추가: 필요시 모든 문자에서 줄바꿈 */
-  max-width: 100%;             /* 추가: 최대 너비 제한 */
-  overflow: hidden;            /* 추가: 넘치는 부분 숨김 */
+  word-wrap: break-word;
+  /* 추가: 긴 단어 줄바꿈 */
+  overflow-wrap: break-word;
+  /* 추가: 모던 브라우저 지원 */
+  word-break: break-all;
+  /* 추가: 필요시 모든 문자에서 줄바꿈 */
+  max-width: 100%;
+  /* 추가: 최대 너비 제한 */
+  overflow: hidden;
+  /* 추가: 넘치는 부분 숨김 */
 }
 
 .review-footer {
@@ -510,6 +536,43 @@ a {
   padding: 20px;
   color: #777;
   font-style: italic;
+}
+
+/* 이미지 갤러리 스타일 */
+.gallery-box {
+  margin: 15px 0;
+  padding-top: 10px;
+}
+
+.gallery-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #555;
+  width: 100%;
+}
+
+.large-box {
+  padding: 0 5px;
+  margin-bottom: 10px;
+  height: 200px;
+}
+
+.large-img {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+}
+
+.small-box {
+  padding: 0 5px;
+  height: 95px;
+  margin-bottom: 10px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
 }
 
 /* 반응형 스타일 */
