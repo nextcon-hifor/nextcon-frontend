@@ -151,10 +151,10 @@ const createChat = async () => {
     const newRoom = {
       id: response.data.id,
       name: response.data.name,
-      avatar: response.data.avatar || null,
-      lastMessage: '',
-      lastMessageTime: null,
-      unreadCount: 0
+      type: response.data.type,
+      createdAt: response.data.createdAt,
+      updatedAt: response.data.updatedAt,
+      lastMessageAt: null,
     };
 
     chatRooms.value.unshift(newRoom); // 목록 맨 앞에 추가
@@ -182,7 +182,7 @@ const store = useStore();
 const currentUserId = computed(() => store.getters.userId);
 
 // Use the chat composable
-const { joinRoom, leaveRoom, sendMessage } = useChat();
+const { joinRoom, leaveRoom } = useChat();
 
 // Current chat room information
 const currentChat = computed(() =>
@@ -197,16 +197,17 @@ const fetchChatRooms = async () => {
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
-      { withCredentials: true }
+      { withCredentials: true, params: { type: "EVENT" } }
     );
 
     chatRooms.value = response.data.map(room => ({
       id: room.id,
       name: room.name || 'Chat Room',
-      avatar: room.avatar || null,
-      lastMessage: room.lastMessage?.content || '',
-      lastMessageTime: room.lastMessage?.timestamp || null,
-      unreadCount: room.unreadCount || 0
+      type: room.type,
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt,
+      lastMessageAt: room.lastMessageAt,
+      messages: room.messages || [],
     }));
   } catch (error) {
     console.error('Failed to fetch chat rooms:', error);
@@ -300,14 +301,42 @@ const sendNewMessage = async () => {
   if (!content || !currentChatId.value) return;
 
   try {
-    await sendMessage(content, currentChatId.value, currentUserId.value);
+    let username = '';
+    try {
+      const userResponse = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${userId}`,
+        { withCredentials: true }
+      );
+      username = userResponse.data.username;
+    } catch (userError) {
+      console.error('Failed to fetch user data:', userError);
+    }
+
+
+    const messageData = {
+      content: content,
+      sender: username,
+      senderId: currentUserId.value, // 현재 사용자 ID
+      roomId: currentChatId.value // 현재 채팅방 ID
+    };
+
+    // 직접 API 호출
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
+      messageData,
+      { withCredentials: true }
+    );
+
+    const savedMessage = response.data;
 
     // Add the message locally for immediate feedback
     messages.value.push({
-      id: Date.now().toString(), // Temporary ID
-      content,
-      userId: currentUserId.value,
-      timestamp: new Date().toISOString()
+      id: savedMessage.id,
+      content: savedMessage.content,
+      roomId: savedMessage.roomId,
+      timestamp: savedMessage.timestamp,
+      userId: savedMessage.sender.id,
+      sender: savedMessage.sender
     });
 
     // Clear the input

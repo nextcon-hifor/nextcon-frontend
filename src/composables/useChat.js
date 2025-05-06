@@ -14,32 +14,6 @@ export function useChat() {
         });
     };
 
-    // 메시지 전송 함수
-    const sendMessage = (content, chatId, userId) => {
-        if (!connectionStatus.connected) {
-            socket.connect();
-        }
-
-        return new Promise((resolve, reject) => {
-            socket.emit(
-                "chat:message",
-                {
-                    content,
-                    chatId,
-                    userId,
-                    timestamp: new Date(),
-                },
-                (response) => {
-                    if (response.error) {
-                        reject(response.error);
-                    } else {
-                        resolve(response);
-                    }
-                }
-            );
-        });
-    };
-
     // 채팅방 입장
     const joinRoom = (chatId) => {
         socket.emit("chat:join", { chatId });
@@ -67,7 +41,6 @@ export function useChat() {
         messages,
         error,
         isLoading,
-        sendMessage,
         joinRoom,
         leaveRoom,
         connectionStatus,
