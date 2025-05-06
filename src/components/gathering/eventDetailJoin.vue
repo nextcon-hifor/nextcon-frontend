@@ -100,8 +100,7 @@
                 </router-link>
 
                 <div class="p-0">
-                  <router-link v-if="!hasReviewed && isParticipating && userId && isEventJoinable"
-                    :to="`/reviewEvent/${event.id}`">
+                  <router-link v-if="!hasReviewed && isParticipating && userId" :to="`/reviewEvent/${event.id}`">
                     <button class="review-btn">
                       Review
                     </button>
@@ -409,7 +408,7 @@ export default {
         hasReviewed.value = reviews.value.some(
           (review) => review.user.userId === userId
         ); // 현재 사용자가 리뷰를 작성했는지 확인
-
+        console.log('이미 리뷰 작성했는지:', hasReviewed.value);
       } catch (error) {
         console.error("Error fetching event data:", error);
       }

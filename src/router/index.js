@@ -11,6 +11,7 @@ import OurCompany from "@/components/about/OurCompany.vue";
 import ContactUs from "@/components/header/ContactUs.vue";
 import notice from "@/components/header/HiForeigners.vue";
 import fnq from "@/components/header/ServiceGuide.vue";
+import Chat from "@/components/chat/Chat.vue";
 import UserPage from "@/components/header/UserPage.vue";
 import AllEvents from "@/components/gathering/AllEvents.vue";
 import deleteEvent from "@/components/gathering/DeleteEvent.vue";
@@ -90,6 +91,12 @@ const routes = [
         meta: { hideHeaderFooter: false },
     },
     {
+        path: "/chat",
+        name: "Chat",
+        component: Chat,
+        meta: { hideHeaderFooter: false },
+    },
+    {
         path: "/userPage/:userId",
         name: "UserPage",
         component: UserPage,
@@ -164,8 +171,8 @@ const router = createRouter({
     routes,
     scrollBehavior(to, from, savedPosition) {
         // 항상 페이지 상단으로 스크롤
-        return { top: 0 }
-      }
+        return { top: 0 };
+    },
 });
 
 router.beforeEach((to, from, next) => {
