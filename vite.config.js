@@ -29,6 +29,7 @@ export default defineConfig({
                 ws: true, // 웹소켓 요청 프록시
             },
         },
+        historyApiFallback: true,
     },
     resolve: {
         alias: {
