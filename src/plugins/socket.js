@@ -7,7 +7,7 @@ export default {
         // 소켓 인스턴스 생성
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
         const socket = io(API_BASE_URL, {
-            withCredentials: true,
+            withCredentials: false, // 나중에 true로 바꾸고, cors 설정 해야함!!
             autoConnect: false, // 필요할 때 수동으로 연결
         });
 
