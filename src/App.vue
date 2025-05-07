@@ -20,12 +20,31 @@
               <li class="li-text-op1"><router-link to="/allEvents">Events</router-link></li>
               <li class="li-text-op1"><router-link to="/fnq">Help</router-link></li>
               <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li>
-              <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
-              <!-- 로그인 시 -->
               <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
-              <li class="li-btn-op1" v-if="isLoggedIn"><router-link :to="`/userPage/${userId}`">My Page</router-link>
+              <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
+              <!-- 프로필 드롭다운 수정된 부분 -->
+              <li v-if="isLoggedIn" class="profile-dropdown-container">
+                <button type="button" @click="toggleDropdown" class="profile-img-button">
+                  <div class="profile-img">
+                    <img :src="userProfileImage || '/assets/img/icon_User.png'" alt="Profile">
+                  </div>
+                </button>
+                <!-- 드롭다운 메뉴 -->
+                <div v-if="isDropdownOpen" class="dropdown-menu" ref="profileDropdown" style="display: block !important;">
+                  <router-link :to="`/userPage/${userId}`" class="dropdown-item">
+                    <i class="fas fa-user"></i> My Profile
+                  </router-link>
+                  <router-link to="/chat" class="dropdown-item">
+                    <i class="fas fa-comment"></i> Chatting
+                  </router-link>
+                  <div class="dropdown-divider"></div>
+                  <router-link to="/" @click="logout" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                  </router-link>
+                </div>
               </li>
-              <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">logout</router-link></li>
+            
+              <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
             </ul>
           </nav>
         </header>
@@ -46,11 +65,31 @@
               <li class="li-text-op1"><router-link to="/fnq">Help</router-link></li>
               <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li>
               <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
-              <!-- 로그인 시 -->
+               <!-- 로그인 시 -->
               <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
-              <li class="li-btn-op1" v-if="isLoggedIn"><router-link :to="`/userPage/${userId}`">My Page</router-link>
+              <!-- 두 번째 헤더에도 동일한 프로필 드롭다운 적용 -->
+              <!-- 프로필 드롭다운 수정된 부분 -->
+              <li v-if="isLoggedIn" class="profile-dropdown-container">
+                <button type="button" @click="toggleDropdown" class="profile-img-button">
+                  <div class="profile-img">
+                    <img :src="userProfileImage || '/assets/img/icon_User.png'" alt="Profile">
+                  </div>
+                </button>
+                <!-- 드롭다운 메뉴 -->
+                <div v-if="isDropdownOpen" class="dropdown-menu" ref="profileDropdown" style="display: block !important;">
+                  <router-link :to="`/userPage/${userId}`" class="dropdown-item">
+                    <i class="fas fa-user"></i> My Profile
+                  </router-link>
+                  <router-link to="/chat" class="dropdown-item">
+                    <i class="fas fa-comment"></i> Chatting
+                  </router-link>
+                  <div class="dropdown-divider"></div>
+                  <router-link to="/" @click="logout" class="dropdown-item">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                  </router-link>
+                </div>
               </li>
-              <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">logout</router-link></li>
+              <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
             </ul>
           </nav>
         </header>
@@ -147,7 +186,7 @@
           <!-- 로그인 시 -->
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link :to="`/userPage/${userId}`">My Page</router-link></li>
-          <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">logout</router-link></li>
+          <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
         </ul>
       </div>
     </header>
@@ -202,7 +241,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
@@ -217,6 +256,10 @@ export default {
     // Vuex Getters
     const isLoggedIn = computed(() => store.getters.isLoggedIn);
     const userId = computed(() => store.getters.userId);
+    // 추가된 상태 변수들
+    const profileDropdown = ref(null);
+    const isDropdownOpen = ref(false);
+    const userProfileImage = ref('');
 
     // Vuex Mutations
     const clearToken = () => store.commit('clearToken');
@@ -280,17 +323,86 @@ export default {
         // ✅ userId도 세션스토리지에 저장
         sessionStorage.setItem('userId', userId);
         store.commit('setUserId', userId);
-      }
+        // 사용자 ID가 있으면 프로필 이미지를 가져옵니다
+        getProfileImage(userId);
+        } else if (store.getters.userId) {
+        // URL에 userId가 없지만 store에 저장된 userId가 있는 경우
+        getProfileImage(store.getters.userId);
+        }
 
-      // ✅ URL에서 access_token과 userId를 제거하여 보안 강화
-      window.history.replaceState({}, document.title, window.location.pathname);
+        // ✅ URL에서 access_token과 userId를 제거하여 보안 강화
+        window.history.replaceState({}, document.title, window.location.pathname);
+      };
+    // 추가된 함수들
+    const toggleDropdown = () => {
+      console.log('Toggle dropdown clicked');
+      isDropdownOpen.value = !isDropdownOpen.value;
+      console.log('isDropdownOpen:', isDropdownOpen.value);
     };
 
+    const handleClickOutside = (event) => {
+      // 간소화된 버전
+      if (isDropdownOpen.value && !event.target.closest('.profile-dropdown-container')) {
+        console.log('Closing dropdown (outside click)');
+        isDropdownOpen.value = false;
+      }
+    };
+    // 사용자 프로필 정보 가져오기 함수
+    const fetchUserProfile = async (userId) => {
+      if (!userId) return;
+      
+      try {
+        console.log('Fetching user profile for userId:', userId);
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${userId}`,
+          {
+            withCredentials: true,
+          }
+        );
+        console.log('User profile response:', response.data);
+        // 프로필 이미지 업데이트
+        if (response.data && response.data.profileImage) {
+          console.log('Setting profile image:', response.data.profileImage);
+          userProfileImage.value = response.data.profileImage;
+        }else {
+      console.warn('No profile image found in response');
+      }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
+    };
+    // 프로필 이미지 가져오기 전용 함수
+    const getProfileImage = async (userId) => {
+      if (!userId) return;
+      
+      try {
+        console.log('Fetching profile image for userId:', userId);
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${userId}`,
+          {
+            withCredentials: true,
+          }
+        );
+        
+        if (response.data && response.data.profileImage) {
+          console.log('Setting profile image:', response.data.profileImage);
+          userProfileImage.value = response.data.profileImage;
+        } else {
+          console.warn('No profile image found in response');
+          // 기본 이미지 사용 (이미 HTML에서 ||로 처리되어 있음)
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile image:', error);
+      }
+    };
     // Lifecycle hook
     onMounted(() => {
       checkLoginStatus();
+      document.addEventListener('click', handleClickOutside);
     });
-
+    onUnmounted(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
     return {
       isMenuOpen,
       toggleMenu,
@@ -299,6 +411,11 @@ export default {
       userId,
       subscribe,
       logout,
+      isDropdownOpen,
+      toggleDropdown,
+      profileDropdown,
+      userProfileImage,
+      getProfileImage
     };
   },
 };
@@ -783,22 +900,48 @@ a {
 }
 
 .nav-links .li-btn-op1 {
-  padding: 5px 10px;
+  padding: 0px 10px !important;
+  margin: 0 5px !important;
+  border: 1px solid #58C3FF !important;
+  border-radius: 24px !important; /* 둥근 모서리 유지 */
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 24px !important; /* 높이 고정 */
+  min-height: 0 !important;
+  max-height: 24px !important;
+  /*padding: 1px 10px;
   border: 1px solid #58C3FF;
   border-radius: 24px;
   font-size: 18px;
   font-weight: 500;
   color: #58C3FF;
   transition: all 0.3s ease;
-  margin-right: 10px;
+  margin: 0 3px*/
 }
-
+.nav-links .li-btn-op1 a {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-size: 18px !important;
+  display: inline-block !important;
+  color: #58C3FF !important; /* 텍스트 색상을 58C3FF로 변경 */
+  vertical-align: middle !important; /* 텍스트 수직 정렬 */
+}
 .nav-links .li-btn-op1:hover {
-  border: 1px solid #58C3FF;
-  background-color: #58C3FF;
-  color: #ffffff;
+  border: 1px solid #58C3FF !important;
+  background-color: #FFFFFF !important;
+}
+/* 전체 네비게이션 메뉴 정렬 개선 */
+.nav-links ul {
+  display: flex !important;
+  align-items: center !important; /* 모든 메뉴 항목 수직 중앙 정렬 */
+  height: 40px !important; /* 메뉴 전체 높이 설정 */
 }
 
+.nav-links li {
+  display: flex !important;
+  align-items: center !important; /* 내부 요소 중앙 정렬 */
+}
 /* 햄버거 버튼 (모바일) */
 .hamburger {
   display: none;
@@ -1236,6 +1379,118 @@ a {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   }
+  .profile-dropdown-container {
+  position: relative;
+  margin-left: 10px;
+}
 
+.profile-dropdown {
+  position: relative;
+}
+
+.profile-img-button {
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 8px;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+.profile-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #58C3FF;
+}
+
+.profile-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  background-color: #FF5A5A;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 200px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  z-index: 9999;
+  display: block !important; /* 강제로 표시 */
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 15px;
+  color: #333;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 8px 0;
+}
+
+/* 모바일 프로필 스타일 */
+.mobile-profile-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+}
+
+.mobile-profile-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 10px;
+}
+
+.mobile-profile-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-profile-info {
+  font-weight: bold;
+}
+@media screen and (max-width: 768px) {
+  .profile-dropdown-container {
+    display: none; /* 모바일에서는 드롭다운 메뉴 숨김 */
+  }
+}
 }
 </style>
