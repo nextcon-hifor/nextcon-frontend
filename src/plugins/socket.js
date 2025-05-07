@@ -5,7 +5,8 @@ import { ref, reactive } from "vue";
 export default {
     install: (app) => {
         // 소켓 인스턴스 생성
-        const socket = io("/", {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const socket = io(API_BASE_URL, {
             withCredentials: true,
             autoConnect: false, // 필요할 때 수동으로 연결
         });
