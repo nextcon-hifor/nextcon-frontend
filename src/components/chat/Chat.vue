@@ -16,7 +16,7 @@
         <div v-for="room in chatRooms" :key="room.id" class="chat-room-item"
           :class="{ 'active': currentChatId === room.id }" @click="selectChatRoom(room.id)">
           <div class="room-avatar">
-            <img :src="room.avatar || '/assets/img/icon_UserCamera.png'" alt="Room">
+            <img :src="'/assets/img/icon_UserCamera.png'" alt="Room">
           </div>
           <div class="room-details">
             <div class="room-name">{{ room.name }}</div>
@@ -45,6 +45,7 @@
         <div v-else class="messages-list">
           <div v-for="message in messages" :key="message.id"
             :class="['message', message.userId === currentUserId ? 'own-message' : 'other-message']">
+            <div v-if="message.senderId !== currentUserId" class="sender-name">{{ message.sender }}</div>
             <div class="message-content">{{ message.content }}</div>
             <div class="message-time">{{ formatMessageTime(message.timestamp) }}</div>
           </div>
@@ -304,10 +305,11 @@ const sendNewMessage = async () => {
     let username = '';
     try {
       const userResponse = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${userId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${currentUserId.value}`,
         { withCredentials: true }
       );
       username = userResponse.data.username;
+      console.log("username: ", username);
     } catch (userError) {
       console.error('Failed to fetch user data:', userError);
     }
@@ -317,14 +319,19 @@ const sendNewMessage = async () => {
       content: content,
       sender: username,
       senderId: currentUserId.value, // 현재 사용자 ID
-      roomId: currentChatId.value // 현재 채팅방 ID
+      roomId: Number(currentChatId.value) // 현재 채팅방 ID
     };
 
     // 직접 API 호출
     const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
+      `${import.meta.env.VITE_API_BASE_URL}/api/chat/messages`,
       messageData,
-      { withCredentials: true }
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
     const savedMessage = response.data;
@@ -335,7 +342,6 @@ const sendNewMessage = async () => {
       content: savedMessage.content,
       roomId: savedMessage.roomId,
       timestamp: savedMessage.timestamp,
-      userId: savedMessage.sender.id,
       sender: savedMessage.sender
     });
 
@@ -406,11 +412,103 @@ watch(() => connectionStatus.connected, (isConnected) => {
 onMounted(() => {
   // Connect to Socket.io if not already connected
   if (!connectionStatus.connected && !connectionStatus.connecting) {
+    const token = store.getters.token; // Vuex 스토어에서 토큰 가져오기
+    socket.auth = { token };
     socket.connect();
   }
 
+
+  // 임시 채팅방 데이터 추가
+  chatRooms.value = [
+    {
+      id: 1,
+      name: '테스트 채팅방 1',
+      type: 'EVENT',
+      lastMessage: '안녕하세요! 여기는 첫 번째 채팅방입니다.',
+      lastMessageTime: new Date().toISOString(),
+      unreadCount: 3,
+    },
+    {
+      id: 2,
+      name: '테스트 채팅방 2',
+      type: 'EVENT',
+      lastMessage: '새로운 이벤트가 등록되었습니다.',
+      lastMessageTime: new Date(Date.now() - 3600000).toISOString(), // 1시간 전
+      unreadCount: 0,
+    },
+    {
+      id: 3,
+      name: '긴 이름을 가진 테스트 채팅방입니다 이름이 길면 어떻게 보이는지 확인용',
+      type: 'EVENT',
+      lastMessage: '이 메시지는 매우 긴 메시지입니다. 메시지가 길어지면 어떻게 UI에 표시되는지 확인하기 위한 긴 메시지입니다.',
+      lastMessageTime: new Date(Date.now() - 86400000).toISOString(), // 1일 전
+      unreadCount: 5,
+    }
+  ];
+
+  // 임시 메시지 데이터 설정 함수
+  const setDemoMessages = () => {
+    currentChatId.value = 1; // 첫 번째 채팅방 선택
+
+    // 현재 시간 기준으로 임시 메시지 생성
+    const now = new Date();
+    messages.value = [
+      {
+        id: 101,
+        content: '안녕하세요! 환영합니다.',
+        sender: '운영자',
+        senderId: 'admin',
+        timestamp: new Date(now.getTime() - 1000 * 60 * 30).toISOString(), // 30분 전
+      },
+      {
+        id: 102,
+        content: '네, 안녕하세요! 반갑습니다.',
+        sender: '사용자1',
+        senderId: currentUserId.value,
+        timestamp: new Date(now.getTime() - 1000 * 60 * 25).toISOString(), // 25분 전
+      },
+      {
+        id: 103,
+        content: '오늘 날씨가 정말 좋네요.',
+        sender: '운영자',
+        senderId: 'admin',
+        timestamp: new Date(now.getTime() - 1000 * 60 * 20).toISOString(), // 20분 전
+      },
+      {
+        id: 104,
+        content: '네, 그러게요. 바깥 활동하기 좋은 날씨예요!',
+        sender: '사용자1',
+        senderId: currentUserId.value,
+        timestamp: new Date(now.getTime() - 1000 * 60 * 15).toISOString(), // 15분 전
+      },
+      {
+        id: 105,
+        content: '이 채팅방은 테스트용 채팅방입니다. 디자인을 확인하기 위한 임시 데이터가 표시됩니다.',
+        sender: '운영자',
+        senderId: 'admin',
+        timestamp: new Date(now.getTime() - 1000 * 60 * 10).toISOString(), // 10분 전
+      },
+      {
+        id: 106,
+        content: '여기에 매우 긴 메시지를 작성하면 UI가 어떻게 보이는지 확인할 수 있습니다. 메시지가 길어지면 자동으로 줄바꿈이 되고 말풍선의 크기가 조정되어야 합니다. 이렇게 긴 메시지도 잘 표시되는지 확인해봅시다.',
+        sender: '사용자1',
+        senderId: currentUserId.value,
+        timestamp: new Date(now.getTime() - 1000 * 60 * 5).toISOString(), // 5분 전
+      },
+      {
+        id: 107,
+        content: '메시지 디자인 테스트가 완료되었습니다.',
+        sender: '운영자',
+        senderId: 'admin',
+        timestamp: new Date().toISOString(), // 현재
+      }
+    ];
+  };
+
+  // 임시 데이터 설정 (실제 API 호출은 주석 처리)
+  setDemoMessages();
   // Fetch chat rooms when component is mounted
-  fetchChatRooms();
+  //fetchChatRooms();
 });
 </script>
 
@@ -824,6 +922,18 @@ onMounted(() => {
 .create-btn:disabled {
   background-color: #b3b3b3;
   cursor: not-allowed;
+}
+
+.sender-name {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 4px;
+}
+
+.message {
+  margin-bottom: 12px;
+  max-width: 70%;
+  animation: fadeIn 0.3s ease;
 }
 
 @media screen and (max-width: 768px) {

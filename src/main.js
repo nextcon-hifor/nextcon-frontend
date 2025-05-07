@@ -16,5 +16,5 @@ const head = createHead();
 app.use(router);
 app.use(store);
 app.use(head); // ✅ Head 플러그인 사용
-app.use(SocketPlugin);
+app.use(SocketPlugin, { store });
 app.mount("#app");
