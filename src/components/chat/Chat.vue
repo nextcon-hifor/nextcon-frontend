@@ -214,7 +214,6 @@ const createChat = async () => {
             `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
             {
                 name: newChatName.value.trim(),
-                type: "EVENT",
             },
             { withCredentials: true }
         );
@@ -268,7 +267,7 @@ const fetchChatRooms = async () => {
     try {
         const response = await axios.get(
             `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
-            { withCredentials: true, params: { type: "EVENT" } }
+            { withCredentials: true }
         );
 
         chatRooms.value = response.data.map((room) => ({
