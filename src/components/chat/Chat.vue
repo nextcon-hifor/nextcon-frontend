@@ -430,7 +430,7 @@ const sendNewMessage = async () => {
         };
 
         const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/api/chat/messages`,
+            `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
             messageData,
             {
                 withCredentials: true,
