@@ -33,6 +33,7 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+.prettierrc
 
 # 환경 변수 파일 제외
 # .env
