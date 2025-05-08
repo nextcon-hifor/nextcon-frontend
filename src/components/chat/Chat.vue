@@ -8,7 +8,7 @@
           <i class="fas fa-plus"></i>
         </button>
       </div>
-      <div v-if="isLoadingRooms" class="loading">Loading chat rooms..</div>
+      <div v-if="isLoadingRooms" class="loading">Loading chat rooms...</div>
       <div v-else-if="chatRooms.length === 0" class="empty-state">No chat rooms available</div>
       <div v-else class="chat-room-list">
         <div v-for="room in chatRooms" :key="room.id" class="chat-room-item" :class="{ active: currentChatId === room.id }" @click="selectChatRoom(room.id)">
