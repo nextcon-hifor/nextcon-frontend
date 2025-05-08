@@ -30,13 +30,16 @@
                     </div>
                     <div class="room-details">
                         <div class="room-name">{{ room.name }}</div>
-                        <div class="last-message">
+                        <div class="last-message" :class="{ 'no-message': !room.lastMessage }">
                             {{ room.lastMessage || "No messages yet" }}
                         </div>
                     </div>
                     <div class="room-meta">
-                        <div class="message-time">
+                        <div class="message-time" v-if="room.lastMessageTime">
                             {{ formatTime(room.lastMessageTime) }}
+                        </div>
+                        <div v-else class="message-time-empty">
+                            {{ formatTime(room.createdAt) }}
                         </div>
                         <div v-if="room.unreadCount" class="unread-count">
                             {{ room.unreadCount }}
@@ -74,8 +77,7 @@
                         v-for="message in messages"
                         :key="message.id"
                         :class="[
-                            'message',
-                            message.userId === currentUserId
+                            message.senderId === currentUserId
                                 ? 'own-message'
                                 : 'other-message',
                         ]"
@@ -87,7 +89,7 @@
                             {{ message.sender }}
                         </div>
                         <div class="message-content">{{ message.content }}</div>
-                        <div class="message-time">
+                        <div class="message-time" :class="{ 'own-message-time': message.senderId === currentUserId }">
                             {{ formatMessageTime(message.timestamp) }}
                         </div>
                     </div>
@@ -269,16 +271,43 @@ const fetchChatRooms = async () => {
             `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
             { withCredentials: true }
         );
-
-        chatRooms.value = response.data.map((room) => ({
-            id: room.id,
-            name: room.name || "Chat Room",
-            type: room.type,
-            createdAt: room.createdAt,
-            updatedAt: room.updatedAt,
-            lastMessageAt: room.lastMessageAt,
-            messages: room.messages || [],
+        chatRooms.value = await Promise.all(response.data.map(async (room) => {
+            // 각 채팅방의 마지막 메시지 정보 가져오기
+            let lastMessage = null;
+            let lastMessageTime = null;
+            
+            try {
+                const messagesResponse = await axios.get(
+                    `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${room.id}/lastMessage`,
+                    { withCredentials: true }
+                );
+                
+                if (messagesResponse.data) {
+                    lastMessage = messagesResponse.data.content;
+                    lastMessageTime = messagesResponse.data.timestamp;
+                }
+            } catch (error) {
+                console.warn(`Failed to fetch last message for room ${room.id}:`, error);
+            }
+            
+            return {
+                id: room.id,
+                name: room.name || "Chat Room",
+                type: room.type,
+                createdAt: room.createdAt,
+                updatedAt: room.updatedAt,
+                lastMessageAt: room.lastMessageAt,
+                lastMessage: lastMessage, // 마지막 메시지 내용
+                lastMessageTime: lastMessageTime, // 마지막 메시지 시간
+                unreadCount: room.unreadCount || 0
+            };
         }));
+         // 마지막 메시지 시간을 기준으로 정렬 (최신순)
+        chatRooms.value.sort((a, b) => {
+            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+            return timeB - timeA;
+        });
     } catch (error) {
         console.error("Failed to fetch chat rooms:", error);
     } finally {
@@ -350,13 +379,30 @@ const handleNewMessage = (message) => {
         const room = chatRooms.value.find((r) => r.id === message.chatId);
         if (room) {
             room.unreadCount = 0;
+            room.lastMessage = message.content;
+            room.lastMessageTime = message.timestamp;
+            
+            // 채팅방 목록 재정렬 (최신 메시지가 있는 방이 상단에 오도록)
+            chatRooms.value.sort((a, b) => {
+                const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+                const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+                return timeB - timeA;
+            });
         }
     } else {
+        // 다른 채팅방의 마지막 메시지 정보 업데이트
         const room = chatRooms.value.find((r) => r.id === message.chatId);
         if (room) {
             room.unreadCount = (room.unreadCount || 0) + 1;
             room.lastMessage = message.content;
             room.lastMessageTime = message.timestamp;
+            
+            // 채팅방 목록 재정렬
+            chatRooms.value.sort((a, b) => {
+                const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+                const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+                return timeB - timeA;
+            });
         }
     }
 };
@@ -471,9 +517,16 @@ const sendNewMessage = async () => {
 // Update the last message for a chat room
 const updateLastMessage = (chatId, content) => {
     const room = chatRooms.value.find((r) => r.id === chatId);
-    if (room) {
+     if (room) {
         room.lastMessage = content;
         room.lastMessageTime = new Date().toISOString();
+        
+        // 메시지 전송 후 채팅방 목록 재정렬
+        chatRooms.value.sort((a, b) => {
+            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+            return timeB - timeA;
+        });
     }
 };
 
@@ -506,7 +559,44 @@ const formatTime = (timestamp) => {
 const formatMessageTime = (timestamp) => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    // 오늘 보낸 메시지는 시간만 표시
+    if (date >= today) {
+        return date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false  // 24시간제로 표시
+        });
+    }
+    
+    // 어제 보낸 메시지는 '어제'와 함께 시간 표시
+    if (date >= yesterday && date < today) {
+        const time = date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        });
+        return `어제 ${time}`;
+    }
+    
+    // 올해 보낸 다른 메시지들은 월/일과 시간
+    if (date.getFullYear() === now.getFullYear()) {
+        return `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        })}`;
+    }
+    
+    // 이전 년도 메시지는 연/월/일과 시간
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+    })}`;
 };
 </script>
 
@@ -563,7 +653,10 @@ const formatMessageTime = (timestamp) => {
     background-color: #58c2ff25;
     border-left: 3px solid #4457ff;
 }
-
+/* 최근 메시지가 있는 채팅방 강조 스타일 */
+.chat-room-item.has-recent-message {
+    border-left: 3px solid #4457ff;
+}
 .room-avatar {
     width: 50px;
     height: 50px;
@@ -598,6 +691,11 @@ const formatMessageTime = (timestamp) => {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* 마지막 메시지가 없을 때 스타일 */
+.last-message.no-message {
+    font-style: italic;
+    color: #aaa;
+}
 
 .room-meta {
     display: flex;
@@ -611,7 +709,12 @@ const formatMessageTime = (timestamp) => {
     color: #999;
     margin-bottom: 8px;
 }
-
+/* 마지막 메시지 시간이 없을 때 스타일 */
+.message-time-empty {
+    font-size: 11px;
+    color: #ccc;
+    margin-bottom: 8px;
+}
 .unread-count {
     background-color: #4457ff;
     color: white;
@@ -654,26 +757,36 @@ const formatMessageTime = (timestamp) => {
     flex-grow: 1;
     overflow-y: auto;
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    scroll-behavior: smooth;
 }
 
 .message {
     margin-bottom: 12px;
     max-width: 70%;
+    animation: fadeIn 0.2s ease-out;
+    display: flex;
+    flex-direction: column;
 }
 
 .own-message {
     margin-left: auto;
+    margin-right: 0;
     background-color: #4457ff;
     color: white;
     border-radius: 18px 18px 0 18px;
     padding: 10px 15px;
+    align-self: flex-end;
 }
 
 .other-message {
     margin-right: auto;
+    margin-left: 0;
     background-color: #f1f1f1;
     border-radius: 18px 18px 18px 0;
     padding: 10px 15px;
+    align-self: flex-start;
 }
 
 .message-content {
@@ -684,6 +797,7 @@ const formatMessageTime = (timestamp) => {
     font-size: 11px;
     margin-top: 4px;
     text-align: right;
+    color: #999;
 }
 
 .own-message .message-time {
@@ -693,7 +807,13 @@ const formatMessageTime = (timestamp) => {
 .other-message .message-time {
     color: #999;
 }
-
+/* 메시지 컨테이너 스타일 */
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
 .message-input-container {
     display: flex;
     padding: 12px 16px;
@@ -931,9 +1051,13 @@ const formatMessageTime = (timestamp) => {
 .message {
     margin-bottom: 12px;
     max-width: 70%;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.2s ease-out;
 }
-
+/* 메시지 애니메이션 효과 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 @media screen and (max-width: 768px) {
     .chat-container {
         flex-direction: column;
