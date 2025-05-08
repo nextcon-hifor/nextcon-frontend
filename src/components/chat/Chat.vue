@@ -118,14 +118,15 @@
             </div>
           </div>
         </div>
+      </div>
 
       <div class="message-input-container">
         <input v-model="newMessage" type="text" placeholder="Type a message..." @keyup.enter="sendNewMessage" :disabled="!connectionStatus.connected" />
         <button @click="sendNewMessage" :disabled="!newMessage.trim() || !connectionStatus.connected">
           <i class="fas fa-paper-plane"></i>
         </button>
+        </div>
       </div>
-    </div>
 
     <!-- Empty state when no chat is selected -->
     <div class="empty-chat-state" v-else>
