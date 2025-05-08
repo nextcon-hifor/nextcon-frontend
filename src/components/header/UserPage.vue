@@ -201,24 +201,27 @@
                             :key="event.id"
                             :event="event"
                         >
-                            <router-link :to="`/events/${event.id}`">
+                            <router-link :to="event.isDeleted ? '#' : `/events/${event.id}`">
                                 <div class="mp-card">
                                     <div class="row">
                                         <div
                                             class="col-4 mp-event-img"
                                             :style="{
                                                 backgroundImage: `url(${event.mainImage})`,
+                                                opacity: event.isDeleted ? '0.5' : '1'
                                             }"
                                         ></div>
                                         <div class="col-8">
-                                            <p class="mp-event-title">
+                                             <p class="mp-event-title" :class="{ 'deleted-text': event.isDeleted }">
                                                 {{ event.title }}
+                                                <span v-if="event.isDeleted">(삭제됨)</span>
                                             </p>
                                             <p
                                                 class="mp-event-host"
                                                 @click.stop
                                             >
                                                 <router-link
+                                                    v-if="!event.isDeleted"
                                                     :to="`/userPage/${event.hostId}`"
                                                 >
                                                     <img
@@ -230,6 +233,7 @@
                                                     />
                                                     {{ event.host }}
                                                 </router-link>
+                                                <span v-else>{{ event.host }}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -350,49 +354,63 @@ const likedEvents = ref([]);
 const mapEventData = async (event) => {
     try {
         // 호스트 프로필 이미지 가져오기
-        const hostResponse = await axios.get(
-            `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${
-                event.createdBy.userId
-            }`,
-            {
-                withCredentials: true,
-            }
-        );
+        let hostProfileImage = "";
+        try {
+            const hostResponse = await axios.get(
+                `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${
+                    event.createdBy?.userId || "unknown"
+                }`,
+                {
+                    withCredentials: true,
+                }
+            );
+            hostProfileImage = hostResponse.data.profileImage || "";
+        } catch (hostError) {
+            console.warn("호스트 정보를 가져오는데 실패했습니다:", hostError);
+            // 오류 발생 시 기본 이미지 사용
+        }
 
         // 리뷰 데이터 가져오기
-        const reviewResponse = await axios.get(
-            `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
-            { withCredentials: true }
-        );
-
-        const hasReviewed = reviewResponse.data.some(
-            (review) => review.user.userId === currentUserId.value
-        );
+        let hasReviewed = false;
+        try {
+            const reviewResponse = await axios.get(
+                `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
+                { withCredentials: true }
+            );
+            hasReviewed = reviewResponse.data.some(
+                (review) => review.user.userId === currentUserId.value
+            );
+        } catch (reviewError) {
+            console.warn("리뷰 정보를 가져오는데 실패했습니다:", reviewError);
+            // 오류 발생 시 기본값 false 사용
+        }
 
         return {
             id: event.id,
-            mainImage: event.mainImage,
-            title: event.name,
-            host: event.createdBy?.username,
-            hostId: event.createdBy?.userId,
-            hostProfileImage: hostResponse.data.profileImage || "",
-            participants: event.participants,
-            maxParticipants: event.maxParticipants,
+            mainImage: event.mainImage || "/path/to/user-image.jpg", // 기본 이미지 경로 설정
+            title: event.name || "삭제된 이벤트",
+            host: event.createdBy?.username || "알 수 없는 호스트",
+            hostId: event.createdBy?.userId || "unknown",
+            hostProfileImage: hostProfileImage,
+            participants: event.participants || 0,
+            maxParticipants: event.maxParticipants || 0,
             hasReviewed: hasReviewed,
+            isDeleted: !event.name // 이벤트 이름이 없으면 삭제된 것으로 간주
         };
     } catch (error) {
         console.error("Error in mapEventData:", error);
         // 에러 발생 시 기본값 반환
         return {
-            id: event.id,
-            mainImage: event.mainImage,
-            title: event.name,
-            host: event.createdBy?.username,
-            hostId: event.createdBy?.userId,
+            id: event.id || "unknown",
+            mainImage: "/path/to/user-image.jpg", // 기본 이미지 경로 설정
+            title: "삭제된 이벤트",
+            host: "알 수 없는 호스트",
+            hostId: "unknown",
             hostProfileImage: "",
-            participants: event.participants,
-            maxParticipants: event.maxParticipants,
+            participants: 0,
+            maxParticipants: 0,
             hasReviewed: false,
+            isDeleted: true
         };
     }
 };
@@ -455,7 +473,30 @@ const fetchAllEvents = async () => {
             }/events/getLikedEvent/${wantShowUserId}`,
             { withCredentials: true }
         );
-        likedEvents.value = likedResponse.data.map(mapEventData);
+        // Promise.all을 사용하여 모든 매핑 작업이 완료될 때까지 기다림
+        const mappedLikedEvents = await Promise.all(
+            likedResponse.data.map(async (event) => {
+                try {
+                    return await mapEventData(event);
+                } catch (error) {
+                    console.warn(`이벤트 ID ${event.id} 매핑 중 오류:`, error);
+                    // 오류 발생 시 기본 삭제된 이벤트 객체 반환
+                    return {
+                        id: event.id || "unknown",
+                        mainImage: "/path/to/default-image.jpg",
+                        title: "삭제된 이벤트",
+                        host: "알 수 없는 호스트",
+                        hostId: "unknown",
+                        hostProfileImage: "",
+                        participants: 0,
+                        maxParticipants: 0,
+                        hasReviewed: false,
+                        isDeleted: true
+                    };
+                }
+            })
+        );
+        likedEvents.value = mappedLikedEvents;
     } catch (error) {
         console.error("Error fetching events:", error);
     }
@@ -649,6 +690,15 @@ a {
 .review-btn.completed {
     color: gray;
     cursor: not-allowed;
+}
+.deleted-event {
+    background-color: #f8f8f8;
+    border: 1px dashed #ccc;
+}
+
+.deleted-text {
+    color: #999;
+    font-style: italic;
 }
 
 /* 반응형 스타일 */
