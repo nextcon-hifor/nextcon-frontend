@@ -11,122 +11,96 @@
       <div v-if="isLoadingRooms" class="loading">Loading chat rooms...</div>
       <div v-else-if="chatRooms.length === 0" class="empty-state">No chat rooms available</div>
       <div v-else class="chat-room-list">
-        <div v-for="room in chatRooms" :key="room.id" class="chat-room-item" :class="{ active: currentChatId === room.id }" @click="selectChatRoom(room.id)">
+        <div 
+          v-for="room in chatRooms" 
+          :key="room.id" 
+          class="chat-room-item" 
+          :class="{ active: currentChatId === room.id, 'has-recent-message': room.lastMessage }" 
+          @click="selectChatRoom(room.id)"
+        >
           <div class="room-avatar">
             <img :src="'/assets/img/icon_UserCamera.png'" alt="Room" />
           </div>
           <div class="room-details">
             <div class="room-name">{{ room.name }}</div>
-            <div class="last-message">
-              {{ room.lastMessage || 'No messages yet' }}
+            <div class="last-message" :class="{ 'no-message': !room.lastMessage }">
+              {{ room.lastMessage || "No messages yet" }}
             </div>
           </div>
           <div class="room-meta">
-            <div class="message-time">
+            <div class="message-time" v-if="room.lastMessageTime">
               {{ formatTime(room.lastMessageTime) }}
             </div>
-            <div v-else-if="chatRooms.length === 0" class="empty-state">
-                No chat rooms available
+            <div v-else class="message-time-empty">
+              {{ formatTime(room.createdAt) }}
             </div>
-            <div v-else class="chat-room-list">
-                <div
-                    v-for="room in chatRooms"
-                    :key="room.id"
-                    class="chat-room-item"
-                    :class="{ active: currentChatId === room.id }"
-                    @click="selectChatRoom(room.id)"
-                >
-                    <div class="room-avatar">
-                        <img
-                            :src="'/assets/img/icon_UserCamera.png'"
-                            alt="Room"
-                        />
-                    </div>
-                    <div class="room-details">
-                        <div class="room-name">{{ room.name }}</div>
-                        <div class="last-message" :class="{ 'no-message': !room.lastMessage }">
-                        <div class="last-message" :class="{ 'no-message': !room.lastMessage }">
-                            {{ room.lastMessage || "No messages yet" }}
-                        </div>
-                    </div>
-                    <div class="room-meta">
-                        <div class="message-time" v-if="room.lastMessageTime">
-                        <div class="message-time" v-if="room.lastMessageTime">
-                            {{ formatTime(room.lastMessageTime) }}
-                        </div>
-                        <div v-else class="message-time-empty">
-                            {{ formatTime(room.createdAt) }}
-                        </div>
-                        <div v-else class="message-time-empty">
-                            {{ formatTime(room.createdAt) }}
-                        </div>
-                        <div v-if="room.unreadCount" class="unread-count">
-                            {{ room.unreadCount }}
-                        </div>
-                    </div>
-                </div>
+            <div v-if="room.unreadCount" class="unread-count">
+              {{ room.unreadCount }}
             </div>
           </div>
         </div>
       </div>
     </div>
 
-        <!-- Chat messages area -->
-        <div class="chat-messages-container" v-if="currentChatId">
-            <div class="chat-header">
-                <div v-if="currentChat" class="current-chat-info">
-                    <img
-                        :src="
-                            currentChat.avatar ||
-                            '/assets/img/icon_UserCamera.png'
-                        "
-                        alt="Room"
-                        class="room-avatar"
-                    />
-                    <div class="room-name">{{ currentChat.name }}</div>
-                </div>
-            </div>
-
-            <div class="messages-wrapper" ref="messageContainer">
-                <div v-if="isLoadingMessages" class="loading">
-                    Loading messages...
-                </div>
-                <div v-else-if="messages.length === 0" class="empty-state">
-                    No messages yet
-                </div>
-                <div v-else class="messages-list">
-                    <div
-                        v-for="message in messages"
-                        :key="message.id"
-                        :class="[
-                            message.senderId === currentUserId
-                            message.senderId === currentUserId
-                                ? 'own-message'
-                                : 'other-message',
-                        ]"
-                    >
-                        <div
-                            v-if="message.senderId !== currentUserId"
-                            class="sender-name"
-                        >
-                            {{ message.sender }}
-                        </div>
-                        <div class="message-content">{{ message.content }}</div>
-                        <div class="message-time" :class="{ 'own-message-time': message.senderId === currentUserId }">
-                        <div class="message-time" :class="{ 'own-message-time': message.senderId === currentUserId }">
-                            {{ formatMessageTime(message.timestamp) }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-      <div class="message-input-container">
-        <input v-model="newMessage" type="text" placeholder="Type a message..." @keyup.enter="sendNewMessage" :disabled="!connectionStatus.connected" />
-        <button @click="sendNewMessage" :disabled="!newMessage.trim() || !connectionStatus.connected">
-          <i class="fas fa-paper-plane"></i>
-        </button>
+    <!-- Chat messages area -->
+    <div class="chat-messages-container" v-if="currentChatId">
+      <div class="chat-header">
+        <div v-if="currentChat" class="current-chat-info">
+          <img
+            :src="currentChat.avatar || '/assets/img/icon_UserCamera.png'"
+            alt="Room"
+            class="room-avatar"
+          />
+          <div class="room-name">{{ currentChat.name }}</div>
         </div>
       </div>
+
+      <div class="messages-wrapper" ref="messageContainer">
+        <div v-if="isLoadingMessages" class="loading">
+          Loading messages...
+        </div>
+        <div v-else-if="messages.length === 0" class="empty-state">
+          No messages yet
+        </div>
+        <div v-else class="messages-list">
+          <div
+            v-for="message in messages"
+            :key="message.id"
+            :class="[
+              'message',
+              message.senderId === currentUserId ? 'own-message' : 'other-message',
+            ]"
+          >
+            <div
+              v-if="message.senderId !== currentUserId"
+              class="sender-name"
+            >
+              {{ message.sender }}
+            </div>
+            <div class="message-content">{{ message.content }}</div>
+            <div class="message-time" :class="{ 'own-message-time': message.senderId === currentUserId }">
+              {{ formatMessageTime(message.timestamp) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="message-input-container">
+        <input
+          v-model="newMessage"
+          type="text"
+          placeholder="Type a message..."
+          @keyup.enter="sendNewMessage"
+          :disabled="!connectionStatus.connected"
+        />
+        <button
+          @click="sendNewMessage"
+          :disabled="!newMessage.trim() || !connectionStatus.connected"
+        >
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
 
     <!-- Empty state when no chat is selected -->
     <div class="empty-chat-state" v-else>
@@ -158,8 +132,6 @@
       </div>
     </div>
   </div>
-
-  <!-- FAQ container content remains the same -->
 </template>
 
 <script setup>
@@ -177,7 +149,7 @@ const messages = ref([]);
 const newMessage = ref('');
 const messageContainer = ref(null);
 
-// 채팅방 모달 관련 상태태
+// 채팅방 모달 관련 상태
 const showCreateChatModal = ref(false);
 const newChatName = ref('');
 const isCreatingChat = ref(false);
@@ -248,104 +220,87 @@ const currentChat = computed(() => chatRooms.value.find(room => room.id === curr
 
 // Fetch chat rooms from the API
 const fetchChatRooms = async () => {
-    if (!currentUserId.value) return;
+  if (!currentUserId.value) return;
 
-    isLoadingRooms.value = true;
-    try {
-        const response = await axios.get(
-            `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
-            { withCredentials: true }
+  isLoadingRooms.value = true;
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
+      { withCredentials: true }
+    );
+    
+    chatRooms.value = await Promise.all(response.data.map(async (room) => {
+      // 각 채팅방의 마지막 메시지 정보 가져오기
+      let lastMessage = null;
+      let lastMessageTime = null;
+      
+      try {
+        const messagesResponse = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${room.id}/lastMessage`,
+          { withCredentials: true }
         );
-        chatRooms.value = await Promise.all(response.data.map(async (room) => {
-            // 각 채팅방의 마지막 메시지 정보 가져오기
-            let lastMessage = null;
-            let lastMessageTime = null;
-            
-            try {
-                const messagesResponse = await axios.get(
-                    `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${room.id}/lastMessage`,
-                    { withCredentials: true }
-                );
-                
-                if (messagesResponse.data) {
-                    lastMessage = messagesResponse.data.content;
-                    lastMessageTime = messagesResponse.data.timestamp;
-                }
-            } catch (error) {
-                console.warn(`Failed to fetch last message for room ${room.id}:`, error);
-            }
-            
-            return {
-                id: room.id,
-                name: room.name || "Chat Room",
-                type: room.type,
-                createdAt: room.createdAt,
-                updatedAt: room.updatedAt,
-                lastMessageAt: room.lastMessageAt,
-                lastMessage: lastMessage, // 마지막 메시지 내용
-                lastMessageTime: lastMessageTime, // 마지막 메시지 시간
-                unreadCount: room.unreadCount || 0
-            };
-        }));
-         // 마지막 메시지 시간을 기준으로 정렬 (최신순)
-        chatRooms.value.sort((a, b) => {
-            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-            return timeB - timeA;
-        });
-        chatRooms.value = await Promise.all(response.data.map(async (room) => {
-            // 각 채팅방의 마지막 메시지 정보 가져오기
-            let lastMessage = null;
-            let lastMessageTime = null;
-            
-            try {
-                const messagesResponse = await axios.get(
-                    `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${room.id}/lastMessage`,
-                    { withCredentials: true }
-                );
-                
-                if (messagesResponse.data) {
-                    lastMessage = messagesResponse.data.content;
-                    lastMessageTime = messagesResponse.data.timestamp;
-                }
-            } catch (error) {
-                console.warn(`Failed to fetch last message for room ${room.id}:`, error);
-            }
-            
-            return {
-                id: room.id,
-                name: room.name || "Chat Room",
-                type: room.type,
-                createdAt: room.createdAt,
-                updatedAt: room.updatedAt,
-                lastMessageAt: room.lastMessageAt,
-                lastMessage: lastMessage, // 마지막 메시지 내용
-                lastMessageTime: lastMessageTime, // 마지막 메시지 시간
-                unreadCount: room.unreadCount || 0
-            };
-        }));
-         // 마지막 메시지 시간을 기준으로 정렬 (최신순)
-        chatRooms.value.sort((a, b) => {
-            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-            return timeB - timeA;
-        });
-    } catch (error) {
-        console.error("Failed to fetch chat rooms:", error);
-    } finally {
-        isLoadingRooms.value = false;
-    }
+        
+        if (messagesResponse.data) {
+          lastMessage = messagesResponse.data.content;
+          lastMessageTime = messagesResponse.data.timestamp;
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch last message for room ${room.id}:`, error);
+      }
+      
+      return {
+        id: room.id,
+        name: room.name || "Chat Room",
+        type: room.type,
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt,
+        lastMessageAt: room.lastMessageAt,
+        lastMessage: lastMessage, // 마지막 메시지 내용
+        lastMessageTime: lastMessageTime, // 마지막 메시지 시간
+        unreadCount: room.unreadCount || 0
+      };
+    }));
+    
+    // 마지막 메시지 시간을 기준으로 정렬 (최신순)
+    chatRooms.value.sort((a, b) => {
+      const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+      const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+      return timeB - timeA;
+    });
+  } catch (error) {
+    console.error("Failed to fetch chat rooms:", error);
+  } finally {
+    isLoadingRooms.value = false;
+  }
 };
 
 // Fetch chat messages for a specific room
-const fetchChatMessages = async chatId => {
+const fetchChatMessages = async (chatId) => {
   if (!chatId) return;
 
   isLoadingMessages.value = true;
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chatrooms/${chatId}`, { withCredentials: true });
+    console.log("Fetching messages for chat:", chatId);
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${chatId}`,
+      { 
+        withCredentials: true,
+        // 캐시 방지를 위한 타임스탬프 추가
+        params: { _t: new Date().getTime() }
+      }
+    );
 
-    messages.value = response.data.messages || [];
+    console.log("Received messages data:", response.data);
+    
+    if (response.data && response.data.messages) {
+      messages.value = response.data.messages || [];
+      
+      // 응답에 메시지가 있는지 확인
+      console.log(`Loaded ${messages.value.length} messages for room ${chatId}`);
+    } else {
+      console.warn("No messages found in response:", response.data);
+      messages.value = [];
+    }
 
     // Automatically scroll to the bottom of the message container
     await nextTick();
@@ -354,13 +309,14 @@ const fetchChatMessages = async chatId => {
     }
   } catch (error) {
     console.error(`Failed to fetch messages for chat ${chatId}:`, error);
+    messages.value = []; // 오류 시 메시지 초기화
   } finally {
     isLoadingMessages.value = false;
   }
 };
 
 // Select a chat room
-const selectChatRoom = async chatId => {
+const selectChatRoom = async (chatId) => {
   if (currentChatId.value === chatId) return;
 
   // Leave current room if any
@@ -370,73 +326,76 @@ const selectChatRoom = async chatId => {
 
   currentChatId.value = chatId;
   messages.value = [];
+  isLoadingMessages.value = true;
 
-  // Join the new room
-  joinRoom(chatId);
+  try {
+    // Join the new room
+    joinRoom(chatId);
 
-  // Fetch messages for the selected room
-  await fetchChatMessages(chatId);
+    // Fetch messages for the selected room
+    await fetchChatMessages(chatId);
 
-  const room = chatRooms.value.find(r => r.id === chatId);
-  if (room) {
-    room.unreadCount = 0;
+    const room = chatRooms.value.find(r => r.id === chatId);
+    if (room) {
+      room.unreadCount = 0;
+    }
+    
+    // 로컬 스토리지에 현재 선택된 채팅방 ID 저장
+    localStorage.setItem('currentChatId', chatId);
+  } catch (error) {
+    console.error("Error selecting chat room:", error);
+  } finally {
+    isLoadingMessages.value = false;
   }
 };
 
 // 소켓 이벤트 핸들러
 const handleNewMessage = (message) => {
-    if (message.chatId === currentChatId.value) {
-        messages.value.push(message);
-        nextTick(() => {
-            if (messageContainer.value) {
-                messageContainer.value.scrollTop =
-                    messageContainer.value.scrollHeight;
-            }
-        });
-
-        const room = chatRooms.value.find((r) => r.id === message.chatId);
-        if (room) {
-            room.unreadCount = 0;
-            room.lastMessage = message.content;
-            room.lastMessageTime = message.timestamp;
-            
-            // 채팅방 목록 재정렬 (최신 메시지가 있는 방이 상단에 오도록)
-            chatRooms.value.sort((a, b) => {
-                const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-                const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-                return timeB - timeA;
-            });
-            room.lastMessage = message.content;
-            room.lastMessageTime = message.timestamp;
-            
-            // 채팅방 목록 재정렬 (최신 메시지가 있는 방이 상단에 오도록)
-            chatRooms.value.sort((a, b) => {
-                const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-                const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-                return timeB - timeA;
-            });
+  if (message.chatId === currentChatId.value) {
+    // 중복 메시지 확인
+    const isDuplicate = messages.value.some(m => m.id === message.id);
+    if (!isDuplicate) {
+      messages.value.push(message);
+      nextTick(() => {
+        if (messageContainer.value) {
+          messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
         }
-    } else {
-        // 다른 채팅방의 마지막 메시지 정보 업데이트
-        // 다른 채팅방의 마지막 메시지 정보 업데이트
-        const room = chatRooms.value.find((r) => r.id === message.chatId);
-        if (room) {
-            room.unreadCount = (room.unreadCount || 0) + 1;
-            room.lastMessage = message.content;
-            room.lastMessageTime = message.timestamp;
-            
-            // 채팅방 목록 재정렬
-            chatRooms.value.sort((a, b) => {
-                const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-                const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-                return timeB - timeA;
-            });
-        }
+      });
     }
+
+    const room = chatRooms.value.find((r) => r.id === message.chatId);
+    if (room) {
+      room.unreadCount = 0;
+      room.lastMessage = message.content;
+      room.lastMessageTime = message.timestamp;
+      
+      // 채팅방 목록 재정렬 (최신 메시지가 있는 방이 상단에 오도록)
+      chatRooms.value.sort((a, b) => {
+        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+        return timeB - timeA;
+      });
+    }
+  } else {
+    // 다른 채팅방의 마지막 메시지 정보 업데이트
+    const room = chatRooms.value.find((r) => r.id === message.chatId);
+    if (room) {
+      room.unreadCount = (room.unreadCount || 0) + 1;
+      room.lastMessage = message.content;
+      room.lastMessageTime = message.timestamp;
+      
+      // 채팅방 목록 재정렬
+      chatRooms.value.sort((a, b) => {
+        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+        return timeB - timeA;
+      });
+    }
+  }
 };
 
 // 연결 상태 변경 핸들러
-const handleConnectionChange = isConnected => {
+const handleConnectionChange = (isConnected) => {
   if (isConnected && currentChatId.value) {
     joinRoom(currentChatId.value);
   } else if (!isConnected) {
@@ -446,7 +405,7 @@ const handleConnectionChange = isConnected => {
 };
 
 // 컴포넌트 마운트 시
-onMounted(() => {
+onMounted(async () => {
   if (!connectionStatus.connected && !connectionStatus.connecting) {
     const token = store.getters.token;
     socket.auth = { token };
@@ -455,14 +414,20 @@ onMounted(() => {
 
   // 소켓 이벤트 리스너 등록
   socket.on('chat:message', handleNewMessage);
-  socket.on('connect_error', err => {
+  socket.on('connect_error', (err) => {
     console.error('Socket connection error:', err);
     connectionStatus.error = '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.';
     connectionStatus.connecting = false;
   });
 
   // 채팅방 목록 가져오기
-  fetchChatRooms();
+  await fetchChatRooms();
+  
+  // 로컬 스토리지에서 이전에 선택한 채팅방 ID 복구
+  const savedChatId = localStorage.getItem('currentChatId');
+  if (savedChatId && chatRooms.value.some(room => room.id === Number(savedChatId))) {
+    await selectChatRoom(Number(savedChatId));
+  }
 });
 
 // 컴포넌트 언마운트 시
@@ -474,7 +439,7 @@ onUnmounted(() => {
 // 연결 상태 감시
 watch(() => connectionStatus.connected, handleConnectionChange);
 
-// 메시지 전송 함수 개선
+// 메시지 전송 함수 (중복 메시지 수정)
 const sendNewMessage = async () => {
   const content = newMessage.value.trim();
   if (!content || !currentChatId.value) return;
@@ -482,11 +447,38 @@ const sendNewMessage = async () => {
   try {
     let username = '';
     try {
-      const userResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/user/getUser/${currentUserId.value}`, { withCredentials: true });
+      const userResponse = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${currentUserId.value}`,
+        { withCredentials: true }
+      );
       username = userResponse.data.username;
     } catch (userError) {
       console.error('Failed to fetch user data:', userError);
       throw new Error('사용자 정보를 가져오는데 실패했습니다.');
+    }
+
+    // 임시 메시지 객체 생성 (UI 즉시 업데이트용)
+    const tempId = Date.now().toString();
+    const tempMessage = {
+      id: tempId,
+      content: content,
+      roomId: currentChatId.value,
+      timestamp: new Date().toISOString(),
+      sender: username,
+      senderId: currentUserId.value,
+      pending: true
+    };
+    
+    // 임시 메시지 추가 (즉시 UI 반영)
+    messages.value.push(tempMessage);
+    
+    // 입력창 비우기
+    newMessage.value = '';
+    
+    // 스크롤 조정
+    await nextTick();
+    if (messageContainer.value) {
+      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
     }
 
     const messageData = {
@@ -496,33 +488,47 @@ const sendNewMessage = async () => {
       roomId: Number(currentChatId.value),
     };
 
-    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/chatmessages`, messageData, {
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // 서버에 메시지 전송
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
+      messageData,
+      {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     const savedMessage = response.data;
-    messages.value.push({
-      id: savedMessage.id,
-      content: savedMessage.content,
-      roomId: savedMessage.roomId,
-      timestamp: savedMessage.timestamp,
-      sender: savedMessage.sender,
-    });
-
-    newMessage.value = '';
-
-    await nextTick();
-    if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    
+    // 임시 메시지를 서버에서 받은 실제 메시지로 교체 (이중 전송 방지)
+    const tempIndex = messages.value.findIndex(m => m.id === tempId);
+    if (tempIndex !== -1) {
+      messages.value.splice(tempIndex, 1, {
+        id: savedMessage.id,
+        content: savedMessage.content,
+        roomId: savedMessage.roomId,
+        timestamp: savedMessage.timestamp,
+        sender: savedMessage.sender,
+        senderId: savedMessage.senderId
+      });
     }
-
+    
+    // 채팅방 목록의 마지막 메시지 정보 업데이트
     updateLastMessage(currentChatId.value, content);
+    
   } catch (error) {
     console.error('Failed to send message:', error);
-    // 더 자세한 에러 메시지 표시
+    
+    // 임시 메시지 제거 (오류 발생 시)
+    const tempId = Date.now().toString();
+    const tempIndex = messages.value.findIndex(m => m.id === tempId || m.pending);
+    if (tempIndex !== -1) {
+      messages.value.splice(tempIndex, 1);
+    }
+    
+    // 에러 메시지 표시
     const errorMessage = error.response?.data?.message || error.message || '메시지 전송에 실패했습니다.';
     alert(errorMessage);
   }
@@ -530,30 +536,22 @@ const sendNewMessage = async () => {
 
 // Update the last message for a chat room
 const updateLastMessage = (chatId, content) => {
-    const room = chatRooms.value.find((r) => r.id === chatId);
-     if (room) {
-     if (room) {
-        room.lastMessage = content;
-        room.lastMessageTime = new Date().toISOString();
-        
-        // 메시지 전송 후 채팅방 목록 재정렬
-        chatRooms.value.sort((a, b) => {
-            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-            return timeB - timeA;
-        });
-        
-        // 메시지 전송 후 채팅방 목록 재정렬
-        chatRooms.value.sort((a, b) => {
-            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
-            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
-            return timeB - timeA;
-        });
-    }
+  const room = chatRooms.value.find((r) => r.id === chatId);
+  if (room) {
+    room.lastMessage = content;
+    room.lastMessageTime = new Date().toISOString();
+    
+    // 메시지 전송 후 채팅방 목록 재정렬
+    chatRooms.value.sort((a, b) => {
+      const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
+      const timeB = b.lastMessageTime ? new Date(b.lastMessageTime) : new Date(b.createdAt);
+      return timeB - timeA;
+    });
+  }
 };
 
 // Format time for the chat list
-const formatTime = timestamp => {
+const formatTime = (timestamp) => {
   if (!timestamp) return '';
 
   const date = new Date(timestamp);
@@ -579,84 +577,47 @@ const formatTime = timestamp => {
 
 // Format time for individual messages
 const formatMessageTime = (timestamp) => {
-    if (!timestamp) return "";
-    const date = new Date(timestamp);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    // 오늘 보낸 메시지는 시간만 표시
-    if (date >= today) {
-        return date.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false  // 24시간제로 표시
-        });
-    }
-    
-    // 어제 보낸 메시지는 '어제'와 함께 시간 표시
-    if (date >= yesterday && date < today) {
-        const time = date.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false
-        });
-        return `어제 ${time}`;
-    }
-    
-    // 올해 보낸 다른 메시지들은 월/일과 시간
-    if (date.getFullYear() === now.getFullYear()) {
-        return `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false
-        })}`;
-    }
-    
-    // 이전 년도 메시지는 연/월/일과 시간
-    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // 오늘 보낸 메시지는 시간만 표시
+  if (date >= today) {
+    return date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false  // 24시간제로 표시
+    });
+  }
+  
+  // 어제 보낸 메시지는 '어제'와 함께 시간 표시
+  if (date >= yesterday && date < today) {
+    const time = date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    });
+    return `어제 ${time}`;
+  }
+  
+  // 올해 보낸 다른 메시지들은 월/일과 시간
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
     })}`;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    // 오늘 보낸 메시지는 시간만 표시
-    if (date >= today) {
-        return date.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false  // 24시간제로 표시
-        });
-    }
-    
-    // 어제 보낸 메시지는 '어제'와 함께 시간 표시
-    if (date >= yesterday && date < today) {
-        const time = date.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false
-        });
-        return `어제 ${time}`;
-    }
-    
-    // 올해 보낸 다른 메시지들은 월/일과 시간
-    if (date.getFullYear() === now.getFullYear()) {
-        return `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false
-        })}`;
-    }
-    
-    // 이전 년도 메시지는 연/월/일과 시간
-    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false
-    })}`;
+  }
+  
+  // 이전 년도 메시지는 연/월/일과 시간
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false
+  })}`;
 };
 </script>
 
@@ -682,6 +643,14 @@ const formatMessageTime = (timestamp) => {
   background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .chat-sidebar h2 {
@@ -713,14 +682,12 @@ const formatMessageTime = (timestamp) => {
   background-color: #58c2ff25;
   border-left: 3px solid #4457ff;
 }
+
 /* 최근 메시지가 있는 채팅방 강조 스타일 */
 .chat-room-item.has-recent-message {
-    border-left: 3px solid #4457ff;
+  border-left: 3px solid #4457ff;
 }
-/* 최근 메시지가 있는 채팅방 강조 스타일 */
-.chat-room-item.has-recent-message {
-    border-left: 3px solid #4457ff;
-}
+
 .room-avatar {
   width: 50px;
   height: 50px;
@@ -755,15 +722,11 @@ const formatMessageTime = (timestamp) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 /* 마지막 메시지가 없을 때 스타일 */
 .last-message.no-message {
-    font-style: italic;
-    color: #aaa;
-}
-/* 마지막 메시지가 없을 때 스타일 */
-.last-message.no-message {
-    font-style: italic;
-    color: #aaa;
+  font-style: italic;
+  color: #aaa;
 }
 
 .room-meta {
@@ -778,18 +741,14 @@ const formatMessageTime = (timestamp) => {
   color: #999;
   margin-bottom: 8px;
 }
+
 /* 마지막 메시지 시간이 없을 때 스타일 */
 .message-time-empty {
-    font-size: 11px;
-    color: #ccc;
-    margin-bottom: 8px;
+  font-size: 11px;
+  color: #ccc;
+  margin-bottom: 8px;
 }
-/* 마지막 메시지 시간이 없을 때 스타일 */
-.message-time-empty {
-    font-size: 11px;
-    color: #ccc;
-    margin-bottom: 8px;
-}
+
 .unread-count {
   background-color: #4457ff;
   color: white;
@@ -810,13 +769,6 @@ const formatMessageTime = (timestamp) => {
   background-color: white;
 }
 
-.chat-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-}
-
 .current-chat-info {
   display: flex;
   align-items: center;
@@ -829,49 +781,46 @@ const formatMessageTime = (timestamp) => {
 }
 
 .messages-wrapper {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    scroll-behavior: smooth;
-    display: flex;
-    flex-direction: column;
-    scroll-behavior: smooth;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
 }
 
 .message {
-    margin-bottom: 12px;
-    max-width: 70%;
-    animation: fadeIn 0.2s ease-out;
-    display: flex;
-    flex-direction: column;
-    animation: fadeIn 0.2s ease-out;
-    display: flex;
-    flex-direction: column;
+  margin-bottom: 12px;
+  max-width: 70%;
+  animation: fadeIn 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
 .own-message {
-    margin-left: auto;
-    margin-right: 0;
-    margin-right: 0;
-    background-color: #4457ff;
-    color: white;
-    border-radius: 18px 18px 0 18px;
-    padding: 10px 15px;
-    align-self: flex-end;
-    align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  background-color: #4457ff;
+  color: white;
+  border-radius: 18px 18px 0 18px;
+  padding: 10px 15px;
+  align-self: flex-end;
 }
 
 .other-message {
-    margin-right: auto;
-    margin-left: 0;
-    margin-left: 0;
-    background-color: #f1f1f1;
-    border-radius: 18px 18px 18px 0;
-    padding: 10px 15px;
-    align-self: flex-start;
-    align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  background-color: #f1f1f1;
+  border-radius: 18px 18px 18px 0;
+  padding: 10px 15px;
+  align-self: flex-start;
 }
 
 .message-content {
@@ -879,33 +828,27 @@ const formatMessageTime = (timestamp) => {
 }
 
 .message .message-time {
-    font-size: 11px;
-    margin-top: 4px;
-    text-align: right;
-    color: #999;
+  font-size: 11px;
+  margin-top: 4px;
+  text-align: right;
+  color: #999;
 }
 
-.own-message .message-time {
+.own-message .message-time,
+.own-message-time {
   color: rgba(255, 255, 255, 0.8);
 }
 
 .other-message .message-time {
   color: #999;
 }
-/* 메시지 컨테이너 스타일 */
-.messages-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
+
+.sender-name {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 4px;
 }
-/* 메시지 컨테이너 스타일 */
-.messages-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-}
+
 .message-input-container {
   display: flex;
   padding: 12px 16px;
