@@ -150,7 +150,6 @@ const createChat = async () => {
     const newRoom = {
       id: response.data.id,
       name: response.data.name,
-      type: response.data.type,
       createdAt: response.data.createdAt,
       updatedAt: response.data.updatedAt,
       lastMessageAt: null,
@@ -227,7 +226,6 @@ const fetchChatRooms = async () => {
       .map(room => ({
         id: room.id,
         name: room.name || 'Chat Room',
-        type: room.type,
         createdAt: room.createdAt,
         updatedAt: room.updatedAt,
         lastMessageAt: room.lastMessageAt,
