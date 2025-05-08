@@ -112,8 +112,6 @@
                     </div>
                 </div>
             </div>
-          </div>
-        </div>
 
       <div class="message-input-container">
         <input v-model="newMessage" type="text" placeholder="Type a message..." @keyup.enter="sendNewMessage" :disabled="!connectionStatus.connected" />
