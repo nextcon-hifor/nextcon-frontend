@@ -112,13 +112,8 @@
                     </div>
                 </div>
             </div>
-            <div class="message-content">{{ message.content }}</div>
-            <div class="message-time">
-              {{ formatMessageTime(message.timestamp) }}
-            </div>
           </div>
         </div>
-      </div>
 
       <div class="message-input-container">
         <input v-model="newMessage" type="text" placeholder="Type a message..." @keyup.enter="sendNewMessage" :disabled="!connectionStatus.connected" />
