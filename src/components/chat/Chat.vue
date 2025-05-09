@@ -9,7 +9,7 @@
       <div v-else-if="chatRooms.length === 0" class="empty-state">No chat rooms available</div>
       <div v-else class="chat-room-list">
         <div v-for="room in chatRooms" :key="room.id" :class="['chat-room-item', { active: room.id === currentChatId }, { 'has-recent-message': room.lastMessage }]" @click="selectChatRoom(room.id)">
-          <div class="room-avatar">
+          <div class="rooms-avatar">
             <img :src="room.avatar || '/assets/img/icon_UserCamera.png'" alt="Room" />
           </div>
           <div class="room-details">
@@ -19,11 +19,8 @@
             </div>
           </div>
           <div class="room-meta">
-            <div class="message-time" v-if="room.lastMessageTime">
+            <div class="message-time" v-if="room.lastMessage&& room.lastMessageTime">
               {{ formatTime(room.lastMessageTime) }}
-            </div>
-            <div v-else class="message-time-empty">
-              {{ formatTime(room.createdAt) }}
             </div>
             <div v-if="room.unreadCount" class="unread-count">
               {{ room.unreadCount }}
@@ -116,38 +113,43 @@ const fetchChatRooms = async () => {
 
   isLoadingRooms.value = true;
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chatrooms`, { withCredentials: true });
-
-    chatRooms.value = await Promise.all(
-      response.data.map(async room => {
-        // 각 채팅방의 마지막 메시지 정보 가져오기
-        let lastMessage = null;
-        let lastMessageTime = null;
-
-        try {
-          const messagesResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chatrooms/${room.id}/lastMessage`, { withCredentials: true });
-
-          if (messagesResponse.data) {
-            lastMessage = messagesResponse.data.content;
-            lastMessageTime = messagesResponse.data.timestamp;
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch last message for room ${room.id}:`, error);
-        }
-
-        return {
-          id: room.id,
-          name: room.name || 'Chat Room',
-          createdAt: room.createdAt,
-          updatedAt: room.updatedAt,
-          lastMessageAt: room.lastMessageAt,
-          lastMessage: lastMessage,
-          lastMessageTime: lastMessageTime,
-          unreadCount: room.unreadCount || 0,
-        };
-      })
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
+      { withCredentials: true }
     );
-
+    
+    chatRooms.value = await Promise.all(response.data.map(async (room) => {
+      // 각 채팅방의 마지막 메시지 정보 가져오기
+      let lastMessage = null;
+      let lastMessageTime = null;
+      
+      try {
+        const messagesResponse = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${room.id}/lastMessage`,
+          { withCredentials: true }
+        );
+        
+        if (messagesResponse.data) {
+          lastMessage = messagesResponse.data.content;
+          lastMessageTime = messagesResponse.data.timestamp;
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch last message for room ${room.id}:`, error);
+      }
+      
+      return {
+        id: room.id,
+        name: room.name || "Chat Room",
+        type: room.type,
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt,
+        lastMessageAt: room.lastMessageAt,
+        lastMessage: lastMessage, // 마지막 메시지 내용
+        lastMessageTime: lastMessageTime, // 마지막 메시지 시간
+        unreadCount: room.unreadCount || 0
+      };
+    }));
+    
     // 마지막 메시지 시간을 기준으로 정렬 (최신순)
     chatRooms.value.sort((a, b) => {
       const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
