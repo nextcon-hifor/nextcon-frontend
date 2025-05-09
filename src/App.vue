@@ -889,7 +889,7 @@ a {
 
 .nav-links .li-text-op1 a {
   text-decoration: none;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
   color: #58C3FF;
   transition: all 0.3s ease;
@@ -922,7 +922,7 @@ a {
   padding: 0 !important;
   margin: 0 !important;
   line-height: 1 !important;
-  font-size: 18px !important;
+  font-size: 14px !important;
   display: inline-block !important;
   color: #58C3FF !important; /* 텍스트 색상을 58C3FF로 변경 */
   vertical-align: middle !important; /* 텍스트 수직 정렬 */
@@ -1039,7 +1039,7 @@ a {
     padding: 5px 10px;
     border: 1px solid #58C3FF;
     border-radius: 24px;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 500;
     color: #58C3FF;
     transition: all 0.3s ease;
