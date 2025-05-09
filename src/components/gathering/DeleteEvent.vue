@@ -90,12 +90,12 @@
       }
 
       // POST 요청
-      await axios.post(
+      /*await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/mail/deleteEvent/${eventId}`,
         { message },
         { withCredentials: true }
       );
-      console.log("Notification sent successfully");
+      console.log("Notification sent successfully");*/
       // DELETE 요청
       await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/events/${eventId}`, { withCredentials: true });
       console.log("Event deleted successfully");

@@ -171,47 +171,46 @@
                         @click="triggerFileInput"
                         @dragover.prevent
                         @drop.prevent="handleDrop"
-                        style="
-                            border: 2px dashed #ccc;
-                            padding: 20px;
-                            text-align: center;
-                            cursor: pointer;
-                        "
+                        :class="['upload-box', {'upload-box-has-files': uploadedFiles.length > 0}]"
                     >
-                        <span>Click to upload or drag and drop files here</span>
+                        <div v-if="uploadedFiles.length === 0">
+                            <i class="upload-icon"></i>
+                            <span>Click to upload or drag and drop files here</span>
+                        </div>
+                        
+                        <div v-else class="preview-container">
+                            <!-- 메인 이미지 미리보기 (첫 번째 이미지) -->
+                            <div v-if="uploadedFiles.length > 0" class="main-image-preview">
+                                <img :src="uploadedFiles[0].preview" alt="Main Preview" />
+                                <div class="main-image-label">Main Image</div>
+                            </div>
+                            <!-- 나머지 이미지 미리보기 -->
+                            <div class="additional-images-preview">
+                                <div v-for="(file, index) in uploadedFiles.slice(1)" :key="index" class="additional-image">
+                                    <img :src="file.preview" alt="Additional Preview" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
                     <!-- 업로드된 파일 미리보기 및 제거 -->
-                    <ul
-                        id="file-list"
-                        style="margin-top: 10px; list-style: none; padding: 0"
-                    >
-                        <li v-for="(file, index) in uploadedFiles" :key="index">
-                            <img
-                                :src="file.preview"
-                                alt="Preview"
-                                style="
-                                    width: 50px;
-                                    height: 50px;
-                                    object-fit: cover;
-                                    margin-right: 10px;
-                                "
-                            />
-                            {{ file.name }}
+                     <div class="file-list-container">
+                        <div v-for="(file, index) in uploadedFiles" :key="index" class="file-item">
+                            <span class="file-name">
+                                {{ index === 0 ? '(Main) ' : '' }}{{ file.name }}
+                            </span>
                             <button
                                 @click="removeFile(index)"
-                                style="
-                                    margin-left: 10px;
-                                    cursor: pointer;
-                                    color: red;
-                                "
+                                class="remove-file-btn"
                             >
                                 Remove
                             </button>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
+                    <div v-if="uploadedFiles.length > 0" class="file-count">
+                        {{ uploadedFiles.length }} of 5 images uploaded
+                    </div>
                 </div>
-                <!-- Dropzone 끝 -->
+                <!-- 파일 업로드 부분 끝 -->
 
                 <div class="form-group">
                     <div class="row half-input-row">
@@ -368,12 +367,26 @@ const handleDrop = (event) => {
 };
 
 const processFiles = (files) => {
+    // 파일 수 체크
     if (uploadedFiles.value.length + files.length > maxFiles) {
         alert(`You can upload up to ${maxFiles} files.`);
         return;
     }
 
-    files.forEach((file) => {
+    // 이미지 파일만 허용 (새로 추가)
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    if (imageFiles.length !== files.length) {
+        alert('Only image files are allowed.');
+        return;
+    }
+
+    // 파일 처리
+    imageFiles.forEach((file) => {
+        if (file.size > 5 * 1024 * 1024) { // 5MB 제한 (새로 추가)
+            alert(`File ${file.name} is too large. Max size is 5MB.`);
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
             uploadedFiles.value.push({
@@ -418,30 +431,47 @@ const postEvent = async () => {
             alert("The event date and time must be in the future.");
             return;
         }
-
-        const uploadedImageUrls = [];
-        for (const fileObj of uploadedFiles.value) {
-            const rawFile = toRaw(fileObj.file); // Proxy 객체 제거
-
-            const formData = new FormData();
-            formData.append("file", rawFile);
-            const uploadResponse = await axios.post(
-                `${
-                    import.meta.env.VITE_API_BASE_URL
-                }/events/upload-image-postEvent`,
-                formData,
-                {
-                    headers: { "Content-Type": "multipart/form-data" }, // 파일 업로드 헤더 설정
-                    withCredentials: true, // 인증 정보를 포함
-                }
-            );
-            uploadedImageUrls.push(uploadResponse.data.imageUrl);
+        // 이미지가 없는 경우 경고 (새로 추가)
+        if (uploadedFiles.value.length === 0) {
+            alert("Please upload at least one image for the event.");
+            return;
         }
-        // `uploadedFiles.value`에서 데이터를 분리
-        const mainImage =
-            uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null; // 첫 번째 파일
-        const images =
-            uploadedImageUrls.length > 1 ? uploadedImageUrls.slice(1) : []; // 나머지 파일들
+
+        // 이미지 업로드 처리 - 순차적으로 처리하여 순서 보장
+        const uploadedImageUrls = [];
+        // 로딩 상태 표시 (새로 추가)
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'loading-message';
+        loadingMessage.textContent = 'Uploading images... Please wait.';
+        document.body.appendChild(loadingMessage);
+         try {
+            for (const fileObj of uploadedFiles.value) {
+                const rawFile = toRaw(fileObj.file); // Proxy 객체 제거
+
+                const formData = new FormData();
+                formData.append("file", rawFile);
+                const uploadResponse = await axios.post(
+                    `${
+                        import.meta.env.VITE_API_BASE_URL
+                    }/events/upload-image-postEvent`,
+                    formData,
+                    {
+                        headers: { "Content-Type": "multipart/form-data" }, // 파일 업로드 헤더 설정
+                        withCredentials: true, // 인증 정보를 포함
+                    }
+                );
+                uploadedImageUrls.push(uploadResponse.data.imageUrl);
+                
+                // 업로드 진행 상황 업데이트 (새로 추가)
+                loadingMessage.textContent = `Uploading images... (${uploadedImageUrls.length}/${uploadedFiles.value.length})`;
+            }
+        } finally {
+            // 로딩 메시지 제거 (새로 추가)
+            document.body.removeChild(loadingMessage);
+        }
+        // 이미지 URL 분리
+        const mainImage = uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null; // 첫 번째 파일은 메인 이미지
+        const images = uploadedImageUrls.length > 1 ? uploadedImageUrls.slice(1) : []; // 나머지 파일들은 갤러리 이미지
         const eventData = {
             category: form.value.category,
             type: form.value.type,
@@ -546,6 +576,8 @@ const postEvent = async () => {
         Object.keys(form.value).forEach((key) => {
             form.value[key] = "";
         });
+        // 파일 목록도 초기화 (추가)
+        uploadedFiles.value = [];
     } catch (error) {
         // 에러 처리
         console.error("Error creating event:", error);
@@ -748,6 +780,27 @@ const openPopup = () => {
     .form-group input[type="file"] {
         padding: 5px;
         font-size: 14px;
+    }
+    /* 파일 업로드 관련 모바일 스타일 */
+    .additional-image {
+        width: calc(33.33% - 7px) !important;
+    }
+    main-image-preview {
+        height: 150px !important;
+    }
+    
+    .file-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .file-name {
+        max-width: 100% !important;
+        margin-bottom: 5px !important;
+    }
+    
+    .remove-file-btn {
+        align-self: flex-end !important;
     }
 
     /* Dropzone 스타일 조정 */
@@ -1196,6 +1249,156 @@ const openPopup = () => {
         border: 1px solid #ddd;
         padding: 10px;
         border-radius: 5px;
+    }
+    /* 파일 업로드 관련 스타일 추가 (새로 추가) */
+    .upload-box {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background-color: #f9f9f9;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-box:hover {
+        border-color: #4457ff;
+        background-color: #f0f5ff;
+    }
+
+    .upload-box-has-files {
+        padding: 15px;
+        height: auto;
+    }
+
+    .upload-icon {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        background: url('/assets/img/icon_Upload.png') no-repeat center center;
+        background-size: contain;
+        margin-bottom: 10px;
+    }
+    /* 이미지 미리보기 컨테이너 */
+    .preview-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* 메인 이미지 미리보기 */
+    .main-image-preview {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .main-image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .main-image-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(74, 104, 255, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    /* 추가 이미지 미리보기 */
+    .additional-images-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .additional-image {
+        width: calc(25% - 8px);
+        height: 80px;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .additional-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* 파일 목록 컨테이너 */
+    .file-list-container {
+        margin-top: 15px;
+    }
+
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #f5f5f5;
+        border-radius: 6px;
+        margin-bottom: 8px;
+    }
+
+    .file-name {
+        font-size: 14px;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 70%;
+    }
+
+    .remove-file-btn {
+        background-color: #ff4557;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.2s;
+    }
+
+    .remove-file-btn:hover {
+        background-color: #e03040;
+    }
+
+    .file-count {
+        font-size: 14px;
+        color: #666;
+        margin-top: 8px;
+        text-align: right;
+    }
+
+    /* 로딩 메시지 스타일 */
+    .loading-message {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 18px;
+        z-index: 9999;
     }
 }
 </style>
