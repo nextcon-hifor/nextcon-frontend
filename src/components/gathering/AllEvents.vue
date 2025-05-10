@@ -302,7 +302,12 @@ const fetchEvents = async (fetchType, params = {}) => {
         }
     );
 
-    return response.data.map(mapEventData); // 데이터 매핑 후 반환
+    const mappedEvents = response.data.map(mapEventData);
+    
+    // Filter out past events unless specifically requested otherwise
+    return fetchType === 'all-including-past' 
+      ? mappedEvents 
+      : filterFutureEvents(mappedEvents);
   } catch (error) {
     console.error(`Failed to fetch events for type "${fetchType}":`, error);
     return []; // 에러 시 빈 배열 반환
@@ -361,7 +366,15 @@ const prevPage = () => {
 onMounted(async () => {
   await fetchAllEvents(); // 모든 이벤트 가져오기
 });
-
+const filterFutureEvents = (eventsList) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+  
+  return eventsList.filter(event => {
+    const eventDate = new Date(event.date);
+    return eventDate >= today;
+  });
+};
 
 </script>
 
@@ -427,6 +440,15 @@ onMounted(async () => {
   }
   .m-search-box button:hover{
     background-color: #58c2ff;
+  }
+  .m-search-box select option {
+    background-color: #555;
+    color: #FFFFFF;
+  }
+  
+  /* 모바일 드롭다운 스타일 */
+  .m-search-box select {
+    appearance: none;
   }
   .m-box{
     padding: 0px 30px;
@@ -585,7 +607,32 @@ onMounted(async () => {
     margin: 0px 5px;
     width: 10rem;
   }
-
+/* 검색 드롭다운 선택 옵션 스타일 */
+  .search-box select option {
+    background-color: #555;
+    color: #FFFFFF;
+  }
+  
+  /* 날짜 선택기 스타일 */
+  .search-date input[type="date"] {
+    color-scheme: dark; /* 다크 모드 달력 사용 */
+  }
+  
+  /* 드롭다운이 열렸을 때 보이는 옵션 스타일 */
+  .search-location select,
+  .search-type select {
+    appearance: none; /* 기본 드롭다운 화살표 숨기기 */
+  }
+  
+  /* 드롭다운 화살표 커스텀 스타일 */
+  .search-location::after,
+  .search-type::after {
+    content: "▼";
+    position: absolute;
+    right: 10px;
+    color: white;
+    pointer-events: none;
+  }
   .search-date input{
     background: url('/assets/img/icon_SearchDate.png') no-repeat right 5px center;
   }
@@ -674,5 +721,18 @@ onMounted(async () => {
     background: #ccc;
   }
 }
+/* 공통 스타일 - 드롭다운 리스트 스타일 */
+select option {
+  background-color: #333;
+  color: white;
+  padding: 10px;
+}
 
+/* 드롭다운 메뉴 열렸을 때 항목 스타일 */
+.search-location select:focus option,
+.search-type select:focus option,
+.m-search-box select:focus option {
+  background-color: #444;
+  color: white;
+}
   </style>

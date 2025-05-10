@@ -28,28 +28,33 @@
               </div>
             </div>
             <div class="card-body">
-              <div class="row">
-                <div class="col-6">
-                  <p class="card-info-text">
-                    <img class="card-info-icon" src="/assets/img/icon_Date.png" alt="" /> {{
-                      formattedDate }}
-                  </p>
-                </div>
-                <div class="col-6">
-                  <p class="card-info-text">
-                    <img class="card-info-icon" src="/assets/img/icon_Heart.png" alt="" />
-                    {{ localEvent.likes }}
-                  </p>
-                </div>
-                <div class="col-12">
-                  <p class="card-info-text">
-                    <img class="card-info-icon" src="/assets/img/icon_Location.png" alt="" />
-                    {{ event.location }}
-                  </p>
+              <!-- 제목을 상단으로 이동하고 고정 높이 컨테이너 추가 -->
+              <div class="card-title-container">
+                <p class="card-title">{{ event.title }}</p>
+              </div>
+              <!-- 카드 정보 영역을 하단으로 이동 -->
+              <div class="card-info-container"></div>
+                <div class="row">
+                  <div class="col-6">
+                    <p class="card-info-text">
+                      <img class="card-info-icon" src="/assets/img/icon_Date.png" alt="" /> {{
+                        formattedDate }}
+                    </p>
+                  </div>
+                  <div class="col-6">
+                    <p class="card-info-text">
+                      <img class="card-info-icon" src="/assets/img/icon_Heart.png" alt="" />
+                      {{ localEvent.likes }}
+                    </p>
+                  </div>
+                  <div class="col-12">
+                    <p class="card-info-text">
+                      <img class="card-info-icon" src="/assets/img/icon_Location.png" alt="" />
+                      {{ event.location }}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <p class="card-title">{{ event.title }}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -73,9 +78,11 @@
               {{ event.type }}
             </div>
           </div>
-          <p class="m-card-title">
-            {{ event.title }}
-          </p>
+          <div class="m-card-title-container">
+            <p class="m-card-title">
+              {{ event.title }}
+            </p>
+          </div>
           <div class="row m-card-info-row">
             <p class="card-info-text">
               <img class="card-info-icon" src="/assets/img/icon_User.png" alt="" />
@@ -242,7 +249,9 @@ export default {
 
   .m-card-info {
     width: 100%;
-    height: 99px;
+    height: 112px; /* 고정 높이 설정 */
+    display: flex;
+    flex-direction: column;
   }
 
   .icon_tema {
@@ -265,15 +274,26 @@ export default {
     color: #FFFFFF;
     border-radius: 24px;
   }
-
+  /* 모바일 제목 컨테이너 스타일 */
+  .m-card-title-container {
+    height: 40px; /* 고정 높이 */
+    margin-bottom: 5px;
+    overflow: hidden;
+  }
   .m-card-title {
     font-size: 16px;
     font-weight: 500;
-    margin-bottom: 3px;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 최대 2줄 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .m-card-info-row {
     padding: 0px 6px;
+    margin-top: auto; /* 아래에 붙이기 (새로 추가) */
   }
 
   .card-info-text {
@@ -308,6 +328,9 @@ export default {
     text-align: center;
     --bs-card-border-width: none;
     transition: all 0.3s ease;
+    height: 420px; /* 카드 전체 높이 고정 (새로 추가) */
+    display: flex;
+    flex-direction: column;
   }
 
   .card:hover {
@@ -326,12 +349,22 @@ export default {
   .col-12 {
     padding: 0px;
   }
-
+  /* 제목 컨테이너 고정 높이 추가 (새로 추가) */
+  .card-title-container {
+    height: 80px; /* 고정 높이 */
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
   .card-title {
     font-size: 1.75rem;
     font-weight: 500;
     text-align: left;
     margin: 0px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 최대 2줄 (새로 추가) */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .card-detail {
@@ -377,6 +410,10 @@ export default {
     width: 100%;
     height: 210px;
     border-radius: 8px;
+  }
+  /* 정보 영역 컨테이너 (새로 추가) */
+  .card-info-container {
+    margin-top: auto; /* 하단에 배치 */
   }
 
   .card-info-text {
@@ -434,6 +471,9 @@ export default {
 
   .event-content .card-body {
     padding: 1rem;
+    display: flex; /* 새로 추가 */
+    flex-direction: column; /* 새로 추가 */
+    flex-grow: 1; /* 새로 추가 */
   }
 
   .event-content .card-info-text {
