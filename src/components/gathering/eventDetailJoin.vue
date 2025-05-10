@@ -9,37 +9,50 @@
           <div class="container banner-img-box" :style="{ backgroundImage: `url(${event.mainImage})` }"></div>
 
           <!-- text section -->
-          <div class="gathering-box">
-            <p class="gatheing-title">{{ event.name }}</p>
-            <div class="gathering-text-box">
-              <p class="gathering-text" v-html="event.description"></p>
+          <!-- 이벤트 정보 카드 -->
+          <div class="event-summary-box">
+            <div class="event-header">
+              <p class="event-label">Event Info</p>
+              <h1 class="event-title">{{ event.name }}</h1>
+            </div>
+            <div class="event-body">
+              <p class="event-description-text" v-html="event.description"></p>
             </div>
           </div>
 
           <!-- Gallery section -->
-          <div class="gallery-box row">
-            <p class="map-title">
-              Photo Gallery
-            </p>
-            <div class="col-6 large-box">
-              <img class="large-img" :style="{ backgroundImage: `url(${event.mainImage})` }" alt="">
-            </div>
-            <div class="col-6">
-              <div class="row">
-                <div class="col-6 small-box" v-for="(bgImage, index) in imagesToDisplay" :key="index"
-                  :style="{ backgroundImage: `url(${bgImage.url})` }"></div>
+          <div class="gallery-section">
+            <h3 class="section-title">Photo Gallery</h3>
+            <div class="horizontal-gallery">
+              <!-- 메인 이미지 -->
+              <div class="gallery-item" @click="openModal(event.mainImage)">
+                <img class="gallery-image" :src="event.mainImage" alt="Main Event Image">
+                <div class="main-image-label">Main</div>
+              </div>
+              
+              <!-- 추가 이미지들 -->
+              <div 
+                class="gallery-item" 
+                v-for="(image, index) in imagesToDisplay" 
+                :key="index"
+                @click="openModal(image)"
+              >
+                <img class="gallery-image" :src="image" :alt="`Event Image ${index + 1}`">
               </div>
             </div>
           </div>
 
           <!-- Map section -->
           <div class="map-box">
-            <p class="map-title">
-              <img src="" alt="">Location
-            </p>
-            <p class="map-text">{{ event.location }}</p>
-            <iframe v-if="iframeUrl" :src="iframeUrl" width="600" height="450" style="border:0;" allowfullscreen=""
+            <h3 class="section-title">
+              <i class="fas fa-map-marked-alt"></i>
+              Location
+            </h3>
+            <div class="location-details">
+              <p class="location-address">{{ event.location }} - {{ event.locationDetail }}</p>
+              <iframe v-if="iframeUrl" :src="iframeUrl" width="600" height="450" style="border:0;" allowfullscreen=""
               loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
           </div>
 
           <!-- Price section -->
@@ -77,7 +90,13 @@
                 <div class="col-12 p-0">
                   <p class="s-card-text4">
                     <img class="s-card-icon1" src="/assets/img/icon_Location.png" alt="" />
-                    {{ event.location }}
+                    {{ event.location }} - {{ event.locationDetail }}
+                  </p>
+                </div>
+                 <!-- 가격 정보를 sticky-card 안에 추가 -->
+                <div class="col-12 p-0">
+                  <p class="s-card-text4">
+                    ₩ {{ event.price }}
                   </p>
                 </div>
                 <div class="col-12 p-0">
@@ -95,7 +114,7 @@
               <div class="row">
                 <router-link :to="`/userPage/${event.createdBy.userId}`" class="p-0">
                   <p class="card-host">
-                    {{ event.createdBy.username }}
+                     Hosted by {{ event.createdBy.username }}
                   </p>
                 </router-link>
 
@@ -198,18 +217,24 @@
       </div>
     </div>
 
-    <!-- Gallery section -->
-    <div class="m-box row">
-      <p class="m-info-title">
-        Photo Gallery
-      </p>
-      <div class="col-6 m-large-box">
-        <img class="m-large-img" :style="{ backgroundImage: `url(${event.mainImage})` }" alt="">
-      </div>
-      <div class="col-6">
-        <div class="row">
-          <div class="col-6 m-small-box" v-for="(bgImage, index) in imagesToDisplay" :key="index"
-            :style="{ backgroundImage: `url(${bgImage.url})` }"></div>
+    <!-- Gallery section for Mobile -->
+    <div class="m-box">
+      <p class="m-info-title">Photo Gallery</p>
+      <div class="m-horizontal-gallery">
+        <!-- 메인 이미지 -->
+        <div class="m-gallery-item" @click="openModal(event.mainImage)">
+          <img class="m-gallery-image main-image" :src="event.mainImage" alt="Main Event Image">
+          <div class="m-main-image-label">Main</div>
+        </div>
+        
+        <!-- 추가 이미지들 -->
+        <div 
+          class="m-gallery-item" 
+          v-for="(image, index) in imagesToDisplay" 
+          :key="index"
+          @click="openModal(image)"
+        >
+          <img class="m-gallery-image" :src="image" :alt="`Event Image ${index + 1}`">
         </div>
       </div>
     </div>
@@ -228,12 +253,6 @@
     <div class="m-box">
       <p class="m-info-title">Event Date</p>
       <p class="price-text">{{ formattedDate }} / 15:00</p> <!--시간정보 입력-->
-    </div>
-
-    <!-- Price section -->
-    <div class="m-box">
-      <p class="m-info-title">Price</p>
-      <p class="price-text">₩ {{ event.price }}</p>
     </div>
 
     <!-- card info -->
@@ -289,13 +308,23 @@
         </div>
       </div>
     </div>
-
   </div>
-
+  <!-- 이미지 모달 -->
+  <div v-if="showModal" class="image-modal" @click.self="closeModal">
+    <div class="modal-content">
+      <span class="close-button" @click="closeModal">&times;</span>
+      <img :src="selectedImage" alt="Full Size Image" class="modal-image">
+      <div class="modal-navigation" v-if="modalImages.length > 1">
+        <button @click="previousImage" class="nav-button prev-button">&larr;</button>
+        <span class="image-counter">{{ currentImageIndex + 1 }} / {{ modalImages.length }}</span>
+        <button @click="nextImage" class="nav-button next-button">&rarr;</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import { useStore } from 'vuex';
 
@@ -305,6 +334,9 @@ export default {
 
     const store = useStore();
     const userId = computed(() => store.getters.userId);
+    const showModal = ref(false);
+    const selectedImage = ref('');
+    const currentImageIndex = ref(0);
     const event = ref({
       id: '',
       description: '', // 빈 문자열로 초기화
@@ -345,76 +377,14 @@ export default {
       window.location.href = '/login'; // 로그인 페이지로 이동
     }
 
-    // 4개의 이미지를 표시하기 위한 computed 프로퍼티
+    // 1. imagesToDisplay computed 수정
+    // 1. imagesToDisplay 수정 - 단순하게 배열 반환
     const imagesToDisplay = computed(() => {
-      // event.value.images가 정의되어 있다고 가정하고, 배열이 아니면 빈 배열로 처리
-      console.log(event.value.images)
+      console.log('Event images:', event.value.images); // 디버깅용
       const imgs = Array.isArray(event.value.images) ? event.value.images : [];
-      return imgs;
+      // 최대 4개 이미지만 표시
+      return imgs.slice(0, 4);
     });
-
-    const fetchEvent = async (eventId) => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/events/getEvents/${eventId}`,
-          { withCredentials: true }
-        );
-
-        const eventData = response.data;
-        // 데이터 매핑 및 변환
-        event.value = {
-          id: eventData.id,
-          images: eventData.images, // API 응답에 맞춰 필드명 확인
-          name: eventData.name,
-          description: eventData.description,
-          date: eventData.date,
-          time: eventData.time,
-          category: eventData.category,
-          mainImage: eventData.mainImage,
-          location: eventData.location,
-          locationDetail: eventData.locationDetail,
-          participants: {
-            current: eventData.participants?.length || 0,
-            max: eventData.maxParticipants,
-            min: eventData.minParticipants
-          },
-          likes: eventData.likes.length || 0,
-          createdBy: {
-            id: eventData.createdBy?.userId || 0,
-            name: eventData.createdBy?.username || "Unknown",
-            //profileImage: eventData.createdBy?.profileImage || "/assets/images/default-host.png",
-          },
-          price: eventData.price,
-          type: eventData.type,
-          question: eventData.question,
-        };
-        const userId = sessionStorage.getItem('userId')
-        isLiked.value = eventData.likes.some((like) => like.user.userId === userId);
-        const ratingResponse = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${eventId}`,
-          { withCredentials: true }
-        );
-        const ratings = ratingResponse.data.map(review => review.rating);
-        const totalRating = ratings.reduce((sum, rating) => sum + rating, 0);
-        event.value.averageRating = ratings.length ? (totalRating / ratings.length).toFixed(1) : 0;
-
-        // 리뷰 데이터 가져오기
-        const reviewsResponse = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${eventId}`,
-          { withCredentials: true }
-        );
-
-        reviews.value = reviewsResponse.data; // 리뷰 데이터 저장
-        hasReviewed.value = reviews.value.some(
-          (review) => review.user.userId === userId
-        ); // 현재 사용자가 리뷰를 작성했는지 확인
-        console.log('이미 리뷰 작성했는지:', hasReviewed.value);
-      } catch (error) {
-        console.error("Error fetching event data:", error);
-      }
-
-
-    };
 
     // 날짜 및 시간 비교를 위한 computed property
     const isEventJoinable = computed(() => {
@@ -513,14 +483,151 @@ export default {
         console.log("User canceled the confirmation.");
       }
     };
+    const fetchEvent = async (eventId) => {
+        try {
+          const response = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/events/getEvents/${eventId}`,
+            { withCredentials: true }
+          );
 
-    onMounted(() => {
+          const eventData = response.data;
+          
+          // eventImages를 images로 변환
+          const images = eventData.eventImages ? eventData.eventImages.map(img => img.url) : [];
+          
+          // 디버깅용 로그
+          console.log('eventImages 원본:', eventData.eventImages);
+          console.log('변환된 images:', images);
+          
+          // 데이터 매핑
+          event.value = {
+            id: eventData.id,
+            name: eventData.name,
+            description: eventData.description,
+            date: eventData.date,
+            time: eventData.time,
+            category: eventData.category,
+            mainImage: eventData.mainImage,
+            images: images,
+            location: eventData.location,
+            locationDetail: eventData.locationDetail,
+            participants: {
+              current: eventData.participants?.length || 0,
+              max: eventData.maxParticipants,
+              min: eventData.minParticipants
+            },
+            likes: eventData.likes.length || 0,
+            createdBy: {
+              id: eventData.createdBy?.userId || 0,
+              name: eventData.createdBy?.username || "Unknown",
+              userId: eventData.createdBy?.userId || 0,  // 추가
+              username: eventData.createdBy?.username || "Unknown"  // 추가
+            },
+            price: eventData.price,
+            type: eventData.type,
+            question: eventData.question,
+          };
+
+          const userId = sessionStorage.getItem('userId');
+          isLiked.value = eventData.likes.some((like) => like.user.userId === userId);
+          
+          // 평균 평점 계산
+          const ratingResponse = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${eventId}`,
+            { withCredentials: true }
+          );
+          const ratings = ratingResponse.data.map(review => review.rating);
+          const totalRating = ratings.reduce((sum, rating) => sum + rating, 0);
+          event.value.averageRating = ratings.length ? (totalRating / ratings.length).toFixed(1) : 0;
+
+          // 리뷰 데이터 가져오기
+          const reviewsResponse = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${eventId}`,
+            { withCredentials: true }
+          );
+
+          reviews.value = reviewsResponse.data;
+          hasReviewed.value = reviews.value.some(
+            (review) => review.user.userId === userId
+          );
+          
+          console.log('이미 리뷰 작성했는지:', hasReviewed.value);
+          console.log('Processed event.images:', event.value.images);
+        } catch (error) {
+          console.error("Error fetching event data:", error);
+        }
+};
+// 모든 이미지를 포함하는 배열
+  const modalImages = computed(() => {
+    const images = [];
+    if (event.value.mainImage) {
+      images.push(event.value.mainImage);
+    }
+    if (event.value.images) {
+      images.push(...event.value.images);
+    }
+    return images;
+  });
+  
+  // 모달 열기 함수
+  const openModal = (imageUrl) => {
+    selectedImage.value = imageUrl;
+    currentImageIndex.value = modalImages.value.indexOf(imageUrl);
+    showModal.value = true;
+    // 스크롤 방지
+    document.body.style.overflow = 'hidden';
+  };
+  
+  // 모달 닫기 함수
+  const closeModal = () => {
+    showModal.value = false;
+    // 스크롤 복원
+    document.body.style.overflow = 'auto';
+  };
+  
+  // 이전 이미지로 이동
+  const previousImage = () => {
+    if (currentImageIndex.value > 0) {
+      currentImageIndex.value--;
+      selectedImage.value = modalImages.value[currentImageIndex.value];
+    }
+  };
+  
+  // 다음 이미지로 이동
+  const nextImage = () => {
+    if (currentImageIndex.value < modalImages.value.length - 1) {
+      currentImageIndex.value++;
+      selectedImage.value = modalImages.value[currentImageIndex.value];
+    }
+  };
+  onMounted(() => {
       const eventId = parseInt(window.location.pathname.split('/').pop()); // Extract event ID from URL
       fetchEvent(eventId);
       const userId = sessionStorage.getItem('userId');
       checkUserParticipation(eventId, userId); // 사용자 참여 여부 확인
-    });
-
+      
+      // 키보드 이벤트 핸들러 정의
+      const handleKeydown = (e) => {
+        if (showModal.value) {
+          if (e.key === 'Escape') {
+            closeModal();
+          } else if (e.key === 'ArrowLeft') {
+            previousImage();
+          } else if (e.key === 'ArrowRight') {
+            nextImage();
+          }
+        }
+      };
+      
+      // 키보드 이벤트 리스너 추가
+      window.addEventListener('keydown', handleKeydown);
+  
+  // 클린업 함수 반환
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown);
+    document.body.style.overflow = 'auto'; // 스크롤 복원
+  });
+});
     const seoulDistrictsMap = {
       "Gangnam-gu":
         "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d50648.029568312784!2d127.02503933400305!3d37.49608024545733!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4235fb589fb%3A0xb331971bc570bb6a!2z7ISc7Jq47Yq567OE7IucIOqwleuCqOq1rA!5e0!3m2!1sko!2skr!4v1738819689190!5m2!1sko!2skr",
@@ -593,8 +700,17 @@ export default {
       dateForCalender,
       reviews,
       hasReviewed,
+      showModal,
+      selectedImage,
+      openModal,
+      closeModal,
+      previousImage,
+      nextImage,
+      currentImageIndex,
+      modalImages,
     };
   },
+  
 };
 </script>
 
@@ -602,6 +718,23 @@ export default {
 <style scoped>
 /* Mobile */
 @media screen and (max-width: 768px) {
+  /* Row 설정 */
+  .row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  /* Column 설정 */
+  .col-8 {
+    width: calc(66.66% - 10px);
+    padding: 0;
+  }
+  
+  .col-4 {
+    width: calc(33.33% - 10px);
+    padding: 0;
+  }
   .Web {
     display: none;
   }
@@ -618,9 +751,15 @@ export default {
     margin-top: 58px;
   }
 
-  .m-banner-img-box .row {
-    justify-self: center;
-  }
+  /* 모바일 배너 이미지 */
+.m-banner-img-box {
+  height: 300px;
+  background-position: center;
+  background-size: contain; /* cover에서 contain으로 변경 */
+  background-repeat: no-repeat; /* 반복 제거 */
+  background-color: #f0f0f0; /* 배경색 추가 */
+  margin-top: 58px;
+}
 
   .s-card-text1 {
     font-size: 14px;
@@ -680,11 +819,10 @@ export default {
   }
 
   .m-large-img {
-    height: 150px;
     width: 100%;
+    height: auto; /* 세로 크기를 자동 설정 */
+    object-fit: contain; /* 자르지 않고 원본 비율 유지 */
     border-radius: 12px;
-    background-position: center;
-    background-size: cover;
   }
 
   .m-small-box {
@@ -799,10 +937,96 @@ export default {
     border-radius: 96px;
     color: #ffffff;
   }
+  /* 모바일 갤러리 스타일 */
+  .m-horizontal-gallery {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 0;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .m-horizontal-gallery::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .m-horizontal-gallery::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+  }
+
+  .m-horizontal-gallery::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+  }
+
+  /* 모바일 갤러리 이미지 수정 */
+.m-gallery-item {
+  flex: 0 0 auto;
+  width: 150px;
+  height: 150px;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #f0f0f0; /* 배경색 추가 */
+}
+
+.m-gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* cover에서 contain으로 변경 */
+  object-position: center; /* 이미지를 중앙에 배치 */
+  display: block;
+}
+
+/* 모바일 큰 이미지 */
+.m-large-img {
+  width: 100%;
+  height: auto;
+  max-height: 250px; /* 최대 높이 지정 */
+  object-fit: contain; /* 비율 유지 */
+  object-position: center; /* 중앙 정렬 */
+  border-radius: 12px;
+  background-color: #f0f0f0; /* 배경색 추가 */
+}
+  .m-main-image-label {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background-color: rgba(68, 87, 255, 0.8);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+  }
+  /* 모바일 지도 */
+  .Mobile iframe {
+    width: 100% !important;
+    height: 300px !important;
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+  .mobile-location-map {
+  width: 100%;
+  height: 250px;
+  border: 0;
+  border-radius: 12px;
+  margin-top: 10px;
+}
 }
 
 /* Web */
 @media screen and (min-width: 769px) {
+  col-8 {
+  width: calc(66.66% - 10px);
+  padding: 0;
+}
   .Web {
     display: block;
   }
@@ -810,28 +1034,87 @@ export default {
   .Mobile {
     display: none;
   }
-
-  /* main banner */
-  .banner-img-box {
+  .banner-img-box,
+  .event-summary-box,
+  .gallery-section,
+  .map-box,
+  .price-box{
     max-width: 100%;
-    height: 400px;
-    margin-top: 60px;
-    background-image: url("/assets/images/image1.png");
-    background-size: cover;
-    background-position: center;
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   }
+  /* main banner */
+  /* 배너 이미지 */
+.banner-img-box {
+  height: 400px;
+  margin-top: 60px;
+  background-size: contain; /* cover에서 contain으로 변경 */
+  background-position: center;
+  background-repeat: no-repeat; /* 반복 제거 */
+  background-color: #fff; /* 배경색 추가 */
+  position: relative;
+  overflow: hidden;
+}
+  .event-summary-box {
+  margin-top: 30px;
+  background: white;
+  padding: 40px;
+}
 
+.event-header {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+}
+
+.event-label {
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.event-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+}
+
+.event-body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-line;
+}
+  .gathering-box {
+  margin-top: 20px;
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  max-width: calc(100% - 20px);
+  margin-left: 10px;
+  margin-right: 10px;
+}
   /* Event content */
-  .gatheing-title {
-    margin-top: 66px;
+  .gathering-title {
     font-size: 48px;
-    margin-bottom: 33px;
-    font-weight: 600;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0;
+    line-height: 1.2;
   }
 
+  /* 지도 섹션 */
   .map-box {
-    margin-top: 33px;
-    margin-bottom: 66px;
+    margin-top: 30px;
+    background: white;
+    padding: 40px;
+    margin-bottom: 30px;
   }
 
   .map-title {
@@ -844,9 +1127,10 @@ export default {
     color: #5F687A;
     font-size: 16px;
   }
-
   .price-box {
     margin-bottom: 132px;
+    padding: 40px;
+    
   }
 
   .price-title {
@@ -859,6 +1143,7 @@ export default {
     font-size: 24px;
     font-weight: 400;
   }
+  
 
   .photo-gallery {
     width: 100%;
@@ -903,14 +1188,17 @@ export default {
   /* sticky-card */
   .sticky-card {
     position: sticky;
-    top: 99px;
-    margin-top: -200px;
+    top: 60px; /* 헤더 바로 아래 고정 */
+    margin-top: 60px; /* 배너와 같은 높이에서 시작 */
     height: max-content;
     margin-bottom: 30px;
     border-radius: 24px;
-    padding: 15px;
-    padding-left: 27px;
-    padding-right: 27px;
+    padding: 25px;
+    background: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    margin-bottom:100px;
   }
 
   .sticky-card-info {
@@ -942,7 +1230,105 @@ export default {
     background: url("/assets/img/icon_HeartFilled.png") no-repeat center / 40px;
     animation: beating .5s 1 alternate;
   }
+  /* 웹 갤러리 스타일 */
+  .gallery-section {
+  margin-top: 60px;
+  background: white;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  max-width: calc(100% - 20px);
+  margin-left: 10px;
+  margin-right: 10px;
+}
 
+  .horizontal-gallery {
+     display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    max-width: 100%;
+    padding-bottom: 1rem;
+  }
+
+  .horizontal-gallery::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .horizontal-gallery::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  .horizontal-gallery::-webkit-scrollbar-thumb {
+    background: #4457FF;
+    border-radius: 10px;
+  }
+
+  .gallery-item {
+  flex: 0 0 auto;
+  width: 280px;
+  height: 280px;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #fff; /* 배경색 추가 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-item:has(.gallery-image[width][height]) .gallery-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 이미지 네이티브 크기 유지 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 갤러리 아이템 안의 이미지 전용 스타일 */
+.horizontal-gallery .gallery-item img,
+.m-horizontal-gallery .m-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* cover에서 contain으로 변경 */
+  object-position: center; /* 이미지를 중앙에 배치 */
+  display: block;
+}
+
+  .gallery-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .main-image-label {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: linear-gradient(135deg, #4457FF, #5865FF);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
   @keyframes beating {
     0% {
       transform: scale(1);
@@ -1078,7 +1464,62 @@ export default {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   }
+  /* 이미지 모달 스타일 */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
 
+.modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 이미지 모달 */
+.modal-image {
+  max-width: 90%;
+  max-height: 80vh;
+  object-fit: contain; /* 이미 contain이지만 명시적으로 유지 */
+  object-position: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background-color: transparent; /* 배경색 제거 */
+}
+.modal-navigation {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.close-button {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  color: white;
+  font-size: 36px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1001;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  color: #ccc;
+  transform: scale(1.2);
+}
   .closed-join-btn {
     width: 90%;
     margin: 12px 32px;
@@ -1088,6 +1529,38 @@ export default {
     border-radius: 96px;
     color: #ffffff;
   }
+  
+  .location-address {
+  color: #666;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+.nav-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+  padding: 10px;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  color: #4457FF;
+  transform: scale(1.2);
+}
+
+.nav-button:disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.image-counter {
+  color: white;
+  font-size: 16px;
+  min-width: 60px;
+  text-align: center;
+}
 }
 
 /* 공통 */
@@ -1109,5 +1582,25 @@ export default {
 
 .text-center {
   text-align: center;
+}
+/* 모바일에서 모달 스타일 조정 */
+@media screen and (max-width: 768px) {
+  .modal-image {
+    max-height: 70vh;
+  }
+  
+  .close-button {
+    top: -30px;
+    font-size: 28px;
+  }
+  
+  .nav-button {
+    font-size: 24px;
+    padding: 5px;
+  }
+  
+  .image-counter {
+    font-size: 14px;
+  }
 }
 </style>
