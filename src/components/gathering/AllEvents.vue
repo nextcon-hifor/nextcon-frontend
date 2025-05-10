@@ -382,11 +382,15 @@ const filterFutureEvents = (eventsList) => {
 <!-- css -->
   <style scoped>
   /* 반응형 설정 */
-@media screen and (max-width: 768px) {
-  .Web { display: none; }
-  .Mobile { display: block; }
-
+  /* 모바일: 0 ~ 767px */
+@media screen and (max-width: 767px) {
+  .Web { display: none !important; }
+  .Mobile { display: block !important; }
   /* banner */
+  .row {
+  display: flex;
+  flex-wrap: wrap;
+}
   .m-banner{
     background-image: url('/assets/img/img_HomeBanner.png');
     background-size: cover;
@@ -552,9 +556,13 @@ const filterFutureEvents = (eventsList) => {
   }
 }
 
-@media screen and (min-width: 769px) {
-  .Web { display: block; }
-  .Mobile { display: none; }
+@media screen and (min-width: 768px) {
+  .Web { display: block !important; }
+  .Mobile { display: none !important; }
+  .row {
+  display: flex;
+  flex-wrap: wrap;
+}
 
   /* 배너 */
   .home-banner {

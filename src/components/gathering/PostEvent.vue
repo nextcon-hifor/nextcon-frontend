@@ -32,7 +32,7 @@
                     <div class="row half-input-row">
                         <div class="col-6">
                             <label for="EventCategory">Event Category</label>
-                            <select v-model="form.category">
+                            <select v-model="form.category" required>
                                 <option disabled hidden selected></option>
                                 <option value="Social">Social</option>
                                 <option value="Learning">Learning</option>
@@ -46,7 +46,7 @@
                         </div>
                         <div class="col-6">
                             <label for="EventType">Event type</label>
-                            <select v-model="form.type">
+                            <select v-model="form.type" required>
                                 <option disabled hidden selected></option>
                                 <option value="FirstCome">First come</option>
                                 <option value="Register">Register</option>
@@ -67,59 +67,22 @@
                 <div class="form-group">
                     <div class="row half-input-row">
                         <div class="col-6">
-                            <label for="">Event location</label>
-                            <select v-model="form.location">
-                                <option disabled hidden selected></option>
-                                <option value="Jongno-gu">Jongno-gu</option>
-                                <option value="Jung-gu">Jung-gu</option>
-                                <option value="Yongsan-gu">Yongsan-gu</option>
-                                <option value="Seongdong-gu">
-                                    Seongdong-gu
-                                </option>
-                                <option value="Gwangjin-gu">Gwangjin-gu</option>
-                                <option value="Dongdaemun-gu">
-                                    Dongdaemun-gu
-                                </option>
-                                <option value="Jungnang-gu">Jungnang-gu</option>
-                                <option value="Seongbuk-gu">Seongbuk-gu</option>
-                                <option value="Gangbuk-gu">Gangbuk-gu</option>
-                                <option value="Dobong-gu">Dobong-gu</option>
-                                <option value="Nowon-gu">Nowon-gu</option>
-                                <option value="Eunpyeong-gu">
-                                    Eunpyeong-gu
-                                </option>
-                                <option value="Seodaemun-gu">
-                                    Seodaemun-gu
-                                </option>
-                                <option value="Mapo-gu">Mapo-gu</option>
-                                <option value="Yangcheon-gu">
-                                    Yangcheon-gu
-                                </option>
-                                <option value="Gangseo-gu">Gangseo-gu</option>
-                                <option value="Guro-gu">Guro-gu</option>
-                                <option value="Geumcheon-gu">
-                                    Geumcheon-gu
-                                </option>
-                                <option value="Yeongdeungpo-gu">
-                                    Yeongdeungpo-gu
-                                </option>
-                                <option value="Dongjak-gu">Dongjak-gu</option>
-                                <option value="Gwanak-gu">Gwanak-gu</option>
-                                <option value="Seocho-gu">Seocho-gu</option>
-                                <option value="Gangnam-gu">Gangnam-gu</option>
-                                <option value="Songpa-gu">Songpa-gu</option>
-                                <option value="Gangdong-gu">Gangdong-gu</option>
-                                <option value="etc">etc</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label for="EventType">The Exact Address</label>
+                            <label for="roadAddress">Road Name Address</label>
                             <input
                                 type="text"
-                                v-model="form.locationDetail"
-                                placeholder=""
-                                required
-                            />
+                                v-model="form.roadAddress"
+                                placeholder="Click to search"
+                                @click="openAddressSearch"
+                                readonly
+                                required/>
+                            </div>
+                            <div class="col-6">
+                                <label for="detailAddress">Detail Address</label>
+                                <input
+                                    type="text"
+                                    v-model="form.detailAddress"
+                                    placeholder="e.g., Apt 101-504"
+                                    required/>
                         </div>
                     </div>
                 </div>
@@ -132,7 +95,16 @@
                         </div>
                         <div class="col-6">
                             <label for="">Event Time</label>
-                            <input type="time" v-model="form.time" required />
+                                    <select v-model="form.time" required>
+                                    <option disabled hidden selected value="">-- Select Time --</option>
+                                    <option
+                                        v-for="time in timeOptions"
+                                        :key="time"
+                                        :value="time"
+                                    >
+                                        {{ time }}
+                                    </option>
+                                </select>
                         </div>
                     </div>
                 </div>
@@ -282,7 +254,9 @@
                     <input
                         type="number"
                         v-model="form.price"
-                        placeholder="ex) 20,000KRW / All events must be approved on-site!"
+                        placeholder="ex) 20,000KRW(Enter in units of 100 KRW) / All events must be approved on-site!"
+                        min="100"
+                        step="100"
                         required
                     />
                 </div>
@@ -344,8 +318,8 @@ const form = ref({
     category: "",
     type: "",
     name: "",
-    location: "",
-    locationDetail: "",
+    roadAddress: "",      // ← 도로명 주소
+    detailAddress: "",    // ← 상세주소 (사용자 입력)
     date: "",
     time: "",
     description: "",
@@ -381,6 +355,16 @@ watch(
         }
     }
 );
+const openAddressSearch = () => {
+  new window.daum.Postcode({
+    oncomplete: (data) => {
+      console.log("✅ 주소 검색 완료:", data.roadAddress); // 👈 이게 먼저 출력돼야 함
+      form.value.roadAddress = data.roadAddress;
+    },
+    width: '100%',
+    height: '100%',
+  }).open();
+};
 const uploadedFiles = ref([]);
 const maxFiles = 5;
 
@@ -435,11 +419,21 @@ const removeFile = (index) => {
 const triggerFileInput = () => {
     document.getElementById("file-upload").click();
 };
-
+const timeOptions = Array.from({ length: 48 }, (_, i) => {
+  const hour = String(Math.floor(i / 2)).padStart(2, "0");
+  const minute = i % 2 === 0 ? "00" : "30";
+  return `${hour}:${minute}`;
+});
 const router = useRouter(); // Vue Router에 접근
 const userId = sessionStorage.getItem("userId");
 const postEvent = async () => {
+    console.log("🚨 form.roadAddress in postEvent:", form.value.roadAddress);
     try {
+        if (!form.value.name.trim()) {
+            alert("Please enter an event name.");
+            return;
+        }
+        
         if (form.value.maxParticipants <= form.value.minParticipants) {
             alert(
                 "The maximum number of participants must be greater than the minimum number."
@@ -466,7 +460,10 @@ const postEvent = async () => {
             alert("Please upload at least one image for the event.");
             return;
         }
-
+        if (form.value.price % 100 !== 0) {
+            alert("Please enter the price in 100 KRW units.");
+            return;
+        }
         // 이미지 업로드 처리
         const uploadedImageUrls = [];
         const loadingMessage = document.createElement("div");
@@ -507,8 +504,7 @@ const postEvent = async () => {
             category: form.value.category,
             type: form.value.type,
             name: form.value.name,
-            location: form.value.location,
-            locationDetail: form.value.locationDetail,
+            
             date: form.value.date,
             time: form.value.time,
             description: form.value.description,
@@ -518,6 +514,8 @@ const postEvent = async () => {
             price: form.value.price,
             mainImage: mainImage,
             images: images,
+            location: form.value.roadAddress,
+            locationDetail: `${form.value.roadAddress} ${form.value.detailAddress}`,
         };
 
         // 최종 데이터 구성
