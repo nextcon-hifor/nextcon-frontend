@@ -3,36 +3,24 @@
     <!-- Chat sidebar with room list -->
     <div class="chat-sidebar">
       <div class="chat-header">
-        <h2>My Chats</h2>
-        <button class="create-chat-btn" @click="openCreateChatModal">
-          <i class="fas fa-plus"></i>
-        </button>
+        <h2>Chats</h2>
       </div>
       <div v-if="isLoadingRooms" class="loading">Loading chat rooms...</div>
       <div v-else-if="chatRooms.length === 0" class="empty-state">No chat rooms available</div>
       <div v-else class="chat-room-list">
-        <div 
-          v-for="room in chatRooms" 
-          :key="room.id" 
-          class="chat-room-item" 
-          :class="{ active: currentChatId === room.id, 'has-recent-message': room.lastMessage }" 
-          @click="selectChatRoom(room.id)"
-        >
-          <div class="room-avatar">
-            <img :src="'/assets/img/icon_UserCamera.png'" alt="Room" />
+        <div v-for="room in chatRooms" :key="room.id" :class="['chat-room-item', { active: room.id === currentChatId }, { 'has-recent-message': room.lastMessage }]" @click="selectChatRoom(room.id)">
+          <div class="rooms-avatar">
+            <img :src="room.avatar || '/assets/img/icon_UserCamera.png'" alt="Room" />
           </div>
           <div class="room-details">
             <div class="room-name">{{ room.name }}</div>
             <div class="last-message" :class="{ 'no-message': !room.lastMessage }">
-              {{ room.lastMessage || "No messages yet" }}
+              {{ room.lastMessage || 'No messages yet' }}
             </div>
           </div>
           <div class="room-meta">
-            <div class="message-time" v-if="room.lastMessageTime">
+            <div class="message-time" v-if="room.lastMessage&& room.lastMessageTime">
               {{ formatTime(room.lastMessageTime) }}
-            </div>
-            <div v-else class="message-time-empty">
-              {{ formatTime(room.createdAt) }}
             </div>
             <div v-if="room.unreadCount" class="unread-count">
               {{ room.unreadCount }}
@@ -46,35 +34,17 @@
     <div class="chat-messages-container" v-if="currentChatId">
       <div class="chat-header">
         <div v-if="currentChat" class="current-chat-info">
-          <img
-            :src="currentChat.avatar || '/assets/img/icon_UserCamera.png'"
-            alt="Room"
-            class="room-avatar"
-          />
+          <img :src="currentChat.avatar || '/assets/img/icon_UserCamera.png'" alt="Room" class="room-avatar" />
           <div class="room-name">{{ currentChat.name }}</div>
         </div>
       </div>
 
       <div class="messages-wrapper" ref="messageContainer">
-        <div v-if="isLoadingMessages" class="loading">
-          Loading messages...
-        </div>
-        <div v-else-if="messages.length === 0" class="empty-state">
-          No messages yet
-        </div>
+        <div v-if="isLoadingMessages" class="loading">Loading messages...</div>
+        <div v-else-if="messages.length === 0" class="empty-state">No messages yet</div>
         <div v-else class="messages-list">
-          <div
-            v-for="message in messages"
-            :key="message.id"
-            :class="[
-              'message',
-              message.senderId === currentUserId ? 'own-message' : 'other-message',
-            ]"
-          >
-            <div
-              v-if="message.senderId !== currentUserId"
-              class="sender-name"
-            >
+          <div v-for="message in messages" :key="message.id" :class="['message', message.senderId === currentUserId ? 'own-message' : 'other-message']">
+            <div v-if="message.senderId !== currentUserId" class="sender-name">
               {{ message.sender }}
             </div>
             <div class="message-content">{{ message.content }}</div>
@@ -86,17 +56,8 @@
       </div>
 
       <div class="message-input-container">
-        <input
-          v-model="newMessage"
-          type="text"
-          placeholder="Type a message..."
-          @keyup.enter="sendNewMessage"
-          :disabled="!connectionStatus.connected"
-        />
-        <button
-          @click="sendNewMessage"
-          :disabled="!newMessage.trim() || !connectionStatus.connected"
-        >
+        <input v-model="newMessage" type="text" placeholder="Type a message..." @keyup.enter="sendNewMessage" :disabled="!connectionStatus.connected" />
+        <button @click="sendNewMessage" :disabled="!newMessage.trim() || !connectionStatus.connected">
           <i class="fas fa-paper-plane"></i>
         </button>
       </div>
@@ -107,28 +68,6 @@
       <div class="select-chat-prompt">
         <i class="fas fa-comments"></i>
         <p>Select a chat to start messaging</p>
-      </div>
-    </div>
-
-    <!-- 채팅방 생성 모달 -->
-    <div v-if="showCreateChatModal" class="modal-overlay" @click="closeCreateChatModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Create New Chat</h3>
-          <button class="close-btn" @click="closeCreateChatModal">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="chatName">Chat Name:</label>
-            <input type="text" id="chatName" v-model="newChatName" placeholder="Enter chat name" />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" @click="closeCreateChatModal">Cancel</button>
-          <button class="create-btn" @click="createChat" :disabled="!newChatName.trim() || isCreatingChat">
-            {{ isCreatingChat ? 'Creating...' : 'Create Chat' }}
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -153,56 +92,6 @@ const messageContainer = ref(null);
 const showCreateChatModal = ref(false);
 const newChatName = ref('');
 const isCreatingChat = ref(false);
-
-// 채팅방 생성 모달 열기
-const openCreateChatModal = async () => {
-  showCreateChatModal.value = true;
-  newChatName.value = '';
-};
-
-// 채팅방 생성 모달 닫기
-const closeCreateChatModal = () => {
-  showCreateChatModal.value = false;
-};
-
-// 새 채팅방 생성
-const createChat = async () => {
-  if (!newChatName.value.trim()) return;
-
-  isCreatingChat.value = true;
-  try {
-    // 채팅방 생성 API 호출
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/chatrooms`,
-      {
-        name: newChatName.value.trim(),
-      },
-      { withCredentials: true }
-    );
-
-    // 새로 생성된 채팅방을 목록에 추가
-    const newRoom = {
-      id: response.data.id,
-      name: response.data.name,
-      createdAt: response.data.createdAt,
-      updatedAt: response.data.updatedAt,
-      lastMessageAt: null,
-    };
-
-    chatRooms.value.unshift(newRoom); // 목록 맨 앞에 추가
-
-    // 모달 닫기
-    closeCreateChatModal();
-
-    // 새로 생성한 채팅방으로 이동
-    selectChatRoom(newRoom.id);
-  } catch (error) {
-    console.error('Failed to create chat room:', error);
-    alert('Failed to create chat room. Please try again.');
-  } finally {
-    isCreatingChat.value = false;
-  }
-};
 
 // Get socket and store from Vue app
 const socket = inject('socket');
@@ -268,37 +157,34 @@ const fetchChatRooms = async () => {
       return timeB - timeA;
     });
   } catch (error) {
-    console.error("Failed to fetch chat rooms:", error);
+    console.error('Failed to fetch chat rooms:', error);
   } finally {
     isLoadingRooms.value = false;
   }
 };
 
 // Fetch chat messages for a specific room
-const fetchChatMessages = async (chatId) => {
+const fetchChatMessages = async chatId => {
   if (!chatId) return;
 
   isLoadingMessages.value = true;
   try {
-    console.log("Fetching messages for chat:", chatId);
-    const response = await axios.get(
-      `${import.meta.env.VITE_API_BASE_URL}/chatrooms/${chatId}`,
-      { 
-        withCredentials: true,
-        // 캐시 방지를 위한 타임스탬프 추가
-        params: { _t: new Date().getTime() }
-      }
-    );
+    console.log('Fetching messages for chat:', chatId);
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chatrooms/${chatId}`, {
+      withCredentials: true,
+      // 캐시 방지를 위한 타임스탬프 추가
+      params: { _t: new Date().getTime() },
+    });
 
-    console.log("Received messages data:", response.data);
-    
+    console.log('Received messages data:', response.data);
+
     if (response.data && response.data.messages) {
       messages.value = response.data.messages || [];
-      
+
       // 응답에 메시지가 있는지 확인
       console.log(`Loaded ${messages.value.length} messages for room ${chatId}`);
     } else {
-      console.warn("No messages found in response:", response.data);
+      console.warn('No messages found in response:', response.data);
       messages.value = [];
     }
 
@@ -316,7 +202,7 @@ const fetchChatMessages = async (chatId) => {
 };
 
 // Select a chat room
-const selectChatRoom = async (chatId) => {
+const selectChatRoom = async chatId => {
   if (currentChatId.value === chatId) return;
 
   // Leave current room if any
@@ -339,18 +225,18 @@ const selectChatRoom = async (chatId) => {
     if (room) {
       room.unreadCount = 0;
     }
-    
+
     // 로컬 스토리지에 현재 선택된 채팅방 ID 저장
     localStorage.setItem('currentChatId', chatId);
   } catch (error) {
-    console.error("Error selecting chat room:", error);
+    console.error('Error selecting chat room:', error);
   } finally {
     isLoadingMessages.value = false;
   }
 };
 
 // 소켓 이벤트 핸들러
-const handleNewMessage = (message) => {
+const handleNewMessage = message => {
   if (message.chatId === currentChatId.value) {
     // 중복 메시지 확인
     const isDuplicate = messages.value.some(m => m.id === message.id);
@@ -363,12 +249,12 @@ const handleNewMessage = (message) => {
       });
     }
 
-    const room = chatRooms.value.find((r) => r.id === message.chatId);
+    const room = chatRooms.value.find(r => r.id === message.chatId);
     if (room) {
       room.unreadCount = 0;
       room.lastMessage = message.content;
       room.lastMessageTime = message.timestamp;
-      
+
       // 채팅방 목록 재정렬 (최신 메시지가 있는 방이 상단에 오도록)
       chatRooms.value.sort((a, b) => {
         const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
@@ -378,12 +264,12 @@ const handleNewMessage = (message) => {
     }
   } else {
     // 다른 채팅방의 마지막 메시지 정보 업데이트
-    const room = chatRooms.value.find((r) => r.id === message.chatId);
+    const room = chatRooms.value.find(r => r.id === message.chatId);
     if (room) {
       room.unreadCount = (room.unreadCount || 0) + 1;
       room.lastMessage = message.content;
       room.lastMessageTime = message.timestamp;
-      
+
       // 채팅방 목록 재정렬
       chatRooms.value.sort((a, b) => {
         const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
@@ -395,7 +281,7 @@ const handleNewMessage = (message) => {
 };
 
 // 연결 상태 변경 핸들러
-const handleConnectionChange = (isConnected) => {
+const handleConnectionChange = isConnected => {
   if (isConnected && currentChatId.value) {
     joinRoom(currentChatId.value);
   } else if (!isConnected) {
@@ -414,7 +300,7 @@ onMounted(async () => {
 
   // 소켓 이벤트 리스너 등록
   socket.on('chat:message', handleNewMessage);
-  socket.on('connect_error', (err) => {
+  socket.on('connect_error', err => {
     console.error('Socket connection error:', err);
     connectionStatus.error = '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.';
     connectionStatus.connecting = false;
@@ -422,7 +308,7 @@ onMounted(async () => {
 
   // 채팅방 목록 가져오기
   await fetchChatRooms();
-  
+
   // 로컬 스토리지에서 이전에 선택한 채팅방 ID 복구
   const savedChatId = localStorage.getItem('currentChatId');
   if (savedChatId && chatRooms.value.some(room => room.id === Number(savedChatId))) {
@@ -447,10 +333,7 @@ const sendNewMessage = async () => {
   try {
     let username = '';
     try {
-      const userResponse = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${currentUserId.value}`,
-        { withCredentials: true }
-      );
+      const userResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/user/getUser/${currentUserId.value}`, { withCredentials: true });
       username = userResponse.data.username;
     } catch (userError) {
       console.error('Failed to fetch user data:', userError);
@@ -466,15 +349,15 @@ const sendNewMessage = async () => {
       timestamp: new Date().toISOString(),
       sender: username,
       senderId: currentUserId.value,
-      pending: true
+      pending: true,
     };
-    
+
     // 임시 메시지 추가 (즉시 UI 반영)
     messages.value.push(tempMessage);
-    
+
     // 입력창 비우기
     newMessage.value = '';
-    
+
     // 스크롤 조정
     await nextTick();
     if (messageContainer.value) {
@@ -489,19 +372,15 @@ const sendNewMessage = async () => {
     };
 
     // 서버에 메시지 전송
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
-      messageData,
-      {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/chatmessages`, messageData, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
     const savedMessage = response.data;
-    
+
     // 임시 메시지를 서버에서 받은 실제 메시지로 교체 (이중 전송 방지)
     const tempIndex = messages.value.findIndex(m => m.id === tempId);
     if (tempIndex !== -1) {
@@ -511,23 +390,22 @@ const sendNewMessage = async () => {
         roomId: savedMessage.roomId,
         timestamp: savedMessage.timestamp,
         sender: savedMessage.sender,
-        senderId: savedMessage.senderId
+        senderId: savedMessage.senderId,
       });
     }
-    
+
     // 채팅방 목록의 마지막 메시지 정보 업데이트
     updateLastMessage(currentChatId.value, content);
-    
   } catch (error) {
     console.error('Failed to send message:', error);
-    
+
     // 임시 메시지 제거 (오류 발생 시)
     const tempId = Date.now().toString();
     const tempIndex = messages.value.findIndex(m => m.id === tempId || m.pending);
     if (tempIndex !== -1) {
       messages.value.splice(tempIndex, 1);
     }
-    
+
     // 에러 메시지 표시
     const errorMessage = error.response?.data?.message || error.message || '메시지 전송에 실패했습니다.';
     alert(errorMessage);
@@ -536,11 +414,11 @@ const sendNewMessage = async () => {
 
 // Update the last message for a chat room
 const updateLastMessage = (chatId, content) => {
-  const room = chatRooms.value.find((r) => r.id === chatId);
+  const room = chatRooms.value.find(r => r.id === chatId);
   if (room) {
     room.lastMessage = content;
     room.lastMessageTime = new Date().toISOString();
-    
+
     // 메시지 전송 후 채팅방 목록 재정렬
     chatRooms.value.sort((a, b) => {
       const timeA = a.lastMessageTime ? new Date(a.lastMessageTime) : new Date(a.createdAt);
@@ -551,7 +429,7 @@ const updateLastMessage = (chatId, content) => {
 };
 
 // Format time for the chat list
-const formatTime = (timestamp) => {
+const formatTime = timestamp => {
   if (!timestamp) return '';
 
   const date = new Date(timestamp);
@@ -576,47 +454,47 @@ const formatTime = (timestamp) => {
 };
 
 // Format time for individual messages
-const formatMessageTime = (timestamp) => {
-  if (!timestamp) return "";
+const formatMessageTime = timestamp => {
+  if (!timestamp) return '';
   const date = new Date(timestamp);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  
+
   // 오늘 보낸 메시지는 시간만 표시
   if (date >= today) {
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString([], {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: false  // 24시간제로 표시
+      hour12: false, // 24시간제로 표시
     });
   }
-  
+
   // 어제 보낸 메시지는 '어제'와 함께 시간 표시
   if (date >= yesterday && date < today) {
-    const time = date.toLocaleTimeString([], { 
-      hour: '2-digit', 
+    const time = date.toLocaleTimeString([], {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
     });
     return `어제 ${time}`;
   }
-  
+
   // 올해 보낸 다른 메시지들은 월/일과 시간
   if (date.getFullYear() === now.getFullYear()) {
-    return `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
-      hour: '2-digit', 
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
     })}`;
   }
-  
+
   // 이전 년도 메시지는 연/월/일과 시간
-  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], { 
-    hour: '2-digit', 
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.toLocaleTimeString([], {
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: false
+    hour12: false,
   })}`;
 };
 </script>
@@ -1084,20 +962,32 @@ const formatMessageTime = (timestamp) => {
 }
 
 .message {
-    margin-bottom: 12px;
-    max-width: 70%;
-    animation: fadeIn 0.2s ease-out;
-    animation: fadeIn 0.2s ease-out;
+  margin-bottom: 12px;
+  max-width: 70%;
+  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 /* 메시지 애니메이션 효과 */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 /* 메시지 애니메이션 효과 */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @media screen and (max-width: 768px) {
   .chat-container {

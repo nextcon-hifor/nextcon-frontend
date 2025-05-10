@@ -1,7 +1,10 @@
  <template>
-
-    <!-- 호스트 질문이 있는경우 -->
-    <template v-if="event.question">
+    <!-- 로딩 상태일 때 표시할 내용 -->
+  <div v-if="isLoading" class="loading-container">
+    <p>Loading event information...</p>
+  </div>
+    <!-- 로딩이 완료되고 호스트 질문이 있는 경우 -->
+  <template v-else-if="event.question">
       <!-- banner -->
       <div class="banner">
         <p class="banner-text1">it’s time to join!</p>
@@ -76,9 +79,11 @@
         <p class="banner-text2">Your next great adventure starts here!</p>
       </div>
 
+    <div class="enter-card">
       <EventCard
           :event="event"
       />
+  </div>
 
       <p class="card-detail text-center">
         <br>
@@ -119,6 +124,7 @@ import EventCard from '@/components/gathering/EventCard.vue';
 import axios from 'axios';
 //import { useStore } from 'vuex';
 //const store = useStore();
+const isLoading = ref(true);
 const userId =  sessionStorage.getItem('userId');
 const userAnswer = ref();
 const event = ref({
@@ -144,6 +150,7 @@ const event = ref({
 const isChecked = ref(false);
 const fetchEvent = async (eventId) => {
   try {
+    isLoading.value = true; // 로딩 시작 (새로 추가)
     const response = await axios.get(
         `${import.meta.env.VITE_API_BASE_URL}/events/getEvents/${eventId}`,
         {
@@ -177,11 +184,15 @@ const fetchEvent = async (eventId) => {
       },
       price: eventData.price,
       type: eventData.type,
-      question: eventData.question,
+      question: eventData.question || '', // null/undefined 처리 (수정)
     };
+    console.log("Event data loaded:", event.value); // 데이터 로딩 확인용 로그 (새로 추가)
     //isLiked.value = eventData.likes.some((like) => like.user.userId === userId);
   } catch (error) {
     console.error("Error fetching event data:", error);
+  }
+  finally {
+    isLoading.value = false; // 로딩 완료 (새로 추가)
   }
 };
 
@@ -414,7 +425,9 @@ onMounted(() => {
   .enter-card {
     width: 100%;
     padding: 10px;
+    display: flex;
     justify-self: center;
+    align-items: center;
   }
 
   .card {
@@ -612,12 +625,26 @@ onMounted(() => {
     text-align: center;
   }
 
-  /* card */
+  .card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  max-width: 100%;
+  flex-shrink: 0;
+  text-align: center;
+  --bs-card-border-width: none;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+  }
   .enter-card {
     width: 100%;
     padding: 10px 0px;
     max-width: 344px;
-    justify-self: center;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   /* 방생성 */
