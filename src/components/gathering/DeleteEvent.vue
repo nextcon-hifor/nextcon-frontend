@@ -7,7 +7,6 @@
         <p class="banner-text2">"Once deleted, this event cannot be recovered."</p>
       </div>
     </div>
-
     <div class="create-form">
       <form @submit.prevent="sendMessage">
         <div class="form-group">
