@@ -25,7 +25,7 @@
             <h3 class="section-title">Photo Gallery</h3>
             <div class="horizontal-gallery">
               <!-- 메인 이미지 -->
-              <div class="gallery-item" @click="openModal(event.mainImage)">
+              <div v-if="event.mainImage" class="gallery-item" @click="openModal(event.mainImage)">
                 <img class="gallery-image" :src="event.mainImage" alt="Main Event Image">
                 <div class="main-image-label">Main</div>
               </div>
@@ -39,6 +39,9 @@
               >
                 <img class="gallery-image" :src="image" :alt="`Event Image ${index + 1}`">
               </div>
+              <div v-if="imagesToDisplay.length === 0 && !event.mainImage">
+                <p>No images available.</p>
+              </div>
             </div>
           </div>
 
@@ -49,9 +52,8 @@
               Location
             </h3>
             <div class="location-details">
-              <p class="location-address">{{ event.location }} - {{ event.locationDetail }}</p>
-              <iframe v-if="iframeUrl" :src="iframeUrl" width="600" height="450" style="border:0;" allowfullscreen=""
-              loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              <p class="location-address">{{ event.locationDetail }}</p>
+              <div id="kakao-map" style="width:100%; height:400px; border-radius: 12px;"></div>
             </div>
           </div>
 
@@ -90,7 +92,7 @@
                 <div class="col-12 p-0">
                   <p class="s-card-text4">
                     <img class="s-card-icon1" src="/assets/img/icon_Location.png" alt="" />
-                    {{ event.location }} - {{ event.locationDetail }}
+                    {{ event.locationDetail }}
                   </p>
                 </div>
                  <!-- 가격 정보를 sticky-card 안에 추가 -->
@@ -222,7 +224,7 @@
       <p class="m-info-title">Photo Gallery</p>
       <div class="m-horizontal-gallery">
         <!-- 메인 이미지 -->
-        <div class="m-gallery-item" @click="openModal(event.mainImage)">
+        <div v-if="event.mainImage" class="m-gallery-item" @click="openModal(event.mainImage)">
           <img class="m-gallery-image main-image" :src="event.mainImage" alt="Main Event Image">
           <div class="m-main-image-label">Main</div>
         </div>
@@ -235,6 +237,9 @@
           @click="openModal(image)"
         >
           <img class="m-gallery-image" :src="image" :alt="`Event Image ${index + 1}`">
+        </div>
+        <div v-if="imagesToDisplay.length === 0 && !event.mainImage">
+          <p>No images available.</p>
         </div>
       </div>
     </div>
@@ -324,7 +329,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import axios from 'axios';
 import { useStore } from 'vuex';
 
@@ -600,12 +605,53 @@ export default {
       selectedImage.value = modalImages.value[currentImageIndex.value];
     }
   };
+  const loadMap = () => {
+  console.log('📍 지도 로딩 시작');
+  console.log('event.location:', event.value.location);
+  console.log('event.locationDetail:', event.value.locationDetail);
+  if (!window.kakao || !window.kakao.maps || !event.value.location) {
+  console.warn('❗카카오맵 객체 또는 주소 없음');
+  return;}
+  const geocoder = new window.kakao.maps.services.Geocoder();
+  const fullAddress = event.value.location;
+
+  geocoder.addressSearch(fullAddress, (result, status) => {
+    console.log('검색 결과:', result);
+    console.log('상태:', status);
+
+    if (status === window.kakao.maps.services.Status.OK) {
+      const container = document.getElementById('kakao-map');
+      const options = {
+        center: new window.kakao.maps.LatLng(result[0].y, result[0].x),
+        level: 3,
+      };
+      const map = new window.kakao.maps.Map(container, options);
+
+      new window.kakao.maps.Marker({
+        map: map,
+        position: new window.kakao.maps.LatLng(result[0].y, result[0].x),
+      });
+    } else {
+      console.warn('주소 검색 실패:', fullAddress);
+    }
+  });
+};
+watch(
+  () => event.value,
+  (newEvent) => {
+    console.log('🟡 watch 실행됨:', newEvent.location);
+    if (newEvent.locationDetail) {
+      loadMap();
+    }
+  },
+  { immediate: true, deep: true }
+);
   onMounted(() => {
       const eventId = parseInt(window.location.pathname.split('/').pop()); // Extract event ID from URL
       fetchEvent(eventId);
+      
       const userId = sessionStorage.getItem('userId');
       checkUserParticipation(eventId, userId); // 사용자 참여 여부 확인
-      
       // 키보드 이벤트 핸들러 정의
       const handleKeydown = (e) => {
         if (showModal.value) {
@@ -621,11 +667,12 @@ export default {
       
       // 키보드 이벤트 리스너 추가
       window.addEventListener('keydown', handleKeydown);
-  
+      console.log("mainImage:", event.value.mainImage);
   // 클린업 함수 반환
   onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown);
     document.body.style.overflow = 'auto'; // 스크롤 복원
+    loadMap();
   });
 });
     const seoulDistrictsMap = {
