@@ -295,17 +295,14 @@ const reviewEvent = async () => {
             uploadedImageUrls.push(uploadResponse.data.imageUrl);
         }
 
-        const formattedImages = uploadedImageUrls.map((url) => ({
-            id: null, // Set to null as these are new images
-            url: url,
-        }));
+        const imageUrls = uploadedImageUrls.map((url) => url); // URL 문자열만 추출
 
         const reviewData = {
             userId,
             eventId,
             rating: form.value.rating,
             comment: form.value.reviewText || "", // comment가 선택사항이라면 빈 문자열로 설정
-            images: formattedImages,
+            imageUrls: imageUrls,
         };
 
         const response = await axios.post(
@@ -315,6 +312,7 @@ const reviewEvent = async () => {
         );
 
         console.log("✅ [SUCCESS] Review submitted:", response.data);
+        console.log("📸 [IMAGE URLs]", imageUrls);
         alert("Review submitted successfully!");
         await router.push(`/events/${eventId}`);
     } catch (error) {
