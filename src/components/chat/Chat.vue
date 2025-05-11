@@ -23,10 +23,35 @@
                     @click="selectChatRoom(room.id)"
                 >
                     <div class="rooms-avatar">
+                        <div
+                            v-if="room.users && room.users.length > 1"
+                            class="group-avatar"
+                        >
+                            <div
+                                v-for="(user, index) in room.users.slice(0, 4)"
+                                :key="user.id"
+                                :class="['avatar-part', `part-${index + 1}`]"
+                            >
+                                <img
+                                    :src="
+                                        user.profileImage ||
+                                        '/assets/img/icon_UserCamera.png'
+                                    "
+                                    :alt="user.username"
+                                />
+                            </div>
+                        </div>
                         <img
+                            v-else-if="room.users && room.users.length === 1"
                             :src="
-                                room.avatar || '/assets/img/icon_UserCamera.png'
+                                room.users[0].profileImage ||
+                                '/assets/img/icon_UserCamera.png'
                             "
+                            alt="Room"
+                        />
+                        <img
+                            v-else
+                            src="/assets/img/icon_UserCamera.png"
                             alt="Room"
                         />
                     </div>
@@ -192,8 +217,19 @@ const fetchChatRooms = async () => {
             { withCredentials: true }
         );
 
+        // 현재 사용자가 참여한 채팅방만 필터링. 백 말고 프론트에서 필터링
+        const userRooms = response.data.filter((room) => {
+            return (
+                room.users &&
+                room.users.some((user) => {
+                    return user.userId === currentUserId.value;
+                })
+            );
+        });
+
         chatRooms.value = await Promise.all(
-            response.data.map(async (room) => {
+            // response.data.map(async (room) => {)
+            userRooms.map(async (room) => {
                 // 각 채팅방의 마지막 메시지 정보 가져오기
                 let lastMessage = null;
                 let lastMessageTime = null;
@@ -312,20 +348,15 @@ const selectChatRoom = async (chatId) => {
     messages.value = [];
     isLoadingMessages.value = true;
 
+    // joinRoom emit 또는 useChat의 joinRoom 사용
+    joinRoom(chatId);
+
     try {
-        // Join the new room
-        joinRoom(chatId);
-
-        // Fetch messages for the selected room
         await fetchChatMessages(chatId);
-
         const room = chatRooms.value.find((r) => r.id === chatId);
         if (room) {
             room.unreadCount = 0;
         }
-
-        // 로컬 스토리지에 현재 선택된 채팅방 ID 저장
-        localStorage.setItem("currentChatId", chatId);
     } catch (error) {
         console.error("Error selecting chat room:", error);
     } finally {
@@ -406,7 +437,7 @@ onMounted(async () => {
     }
 
     // 소켓 이벤트 리스너 등록
-    socket.on("chat:message", handleNewMessage);
+    socket.on("newMessage", handleNewMessage);
     socket.on("connect_error", (err) => {
         console.error("Socket connection error:", err);
         connectionStatus.error =
@@ -416,127 +447,74 @@ onMounted(async () => {
 
     // 채팅방 목록 가져오기
     await fetchChatRooms();
-
-    // 로컬 스토리지에서 이전에 선택한 채팅방 ID 복구
-    const savedChatId = localStorage.getItem("currentChatId");
-    if (
-        savedChatId &&
-        chatRooms.value.some((room) => room.id === Number(savedChatId))
-    ) {
-        await selectChatRoom(Number(savedChatId));
-    }
 });
 
 // 컴포넌트 언마운트 시
 onUnmounted(() => {
     // 소켓 이벤트 리스너 제거
-    socket.off("chat:message", handleNewMessage);
+    socket.off("newMessage", handleNewMessage);
 });
 
 // 연결 상태 감시
 watch(() => connectionStatus.connected, handleConnectionChange);
 
-// 메시지 전송 함수 (중복 메시지 수정)
+// 메시지 전송 함수 (소켓 emit 방식)
 const sendNewMessage = async () => {
     const content = newMessage.value.trim();
     if (!content || !currentChatId.value) return;
 
-    try {
-        let username = "";
-        try {
-            const userResponse = await axios.get(
-                `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${
-                    currentUserId.value
-                }`,
-                { withCredentials: true }
-            );
-            username = userResponse.data.username;
-        } catch (userError) {
-            console.error("Failed to fetch user data:", userError);
-            throw new Error("사용자 정보를 가져오는데 실패했습니다.");
-        }
+    // 임시 메시지 객체 생성 (UI 즉시 업데이트용)
+    const tempId = Date.now().toString();
+    const tempMessage = {
+        id: tempId,
+        content: content,
+        roomId: currentChatId.value,
+        timestamp: new Date().toISOString(),
+        sender: currentUserId.value, // senderId와 sender 구분 필요시 수정
+        senderId: currentUserId.value,
+        pending: true,
+    };
+    messages.value.push(tempMessage);
+    newMessage.value = "";
+    await nextTick();
+    if (messageContainer.value) {
+        messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    }
 
-        // 임시 메시지 객체 생성 (UI 즉시 업데이트용)
-        const tempId = Date.now().toString();
-        const tempMessage = {
-            id: tempId,
-            content: content,
-            roomId: currentChatId.value,
-            timestamp: new Date().toISOString(),
-            sender: username,
-            senderId: currentUserId.value,
-            pending: true,
-        };
+    // 소켓 emit
+    socket.emit("sendMessage", {
+        content: content,
+        sender: currentUserId.value, // senderId와 sender 구분 필요시 수정
+        senderId: currentUserId.value,
+        roomId: Number(currentChatId.value),
+    });
+    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/chatmessages`, {
+        content: content,
+        sender: currentUserId.value, // senderId와 sender 구분 필요시 수정
+        senderId: currentUserId.value,
+        roomId: Number(currentChatId.value),
+    });
+};
 
-        // 임시 메시지 추가 (즉시 UI 반영)
-        messages.value.push(tempMessage);
-
-        // 입력창 비우기
-        newMessage.value = "";
-
-        // 스크롤 조정
-        await nextTick();
+// 실시간 메시지 수신 (newMessage)
+socket.off("newMessage"); // 중복 리스너 방지
+socket.on("newMessage", (message) => {
+    // 임시 메시지 교체 (pending 메시지 제거)
+    const tempIndex = messages.value.findIndex(
+        (m) => m.pending && m.content === message.content
+    );
+    if (tempIndex !== -1) {
+        messages.value.splice(tempIndex, 1, message);
+    } else {
+        messages.value.push(message);
+    }
+    nextTick(() => {
         if (messageContainer.value) {
             messageContainer.value.scrollTop =
                 messageContainer.value.scrollHeight;
         }
-
-        const messageData = {
-            content: content,
-            sender: username,
-            senderId: currentUserId.value,
-            roomId: Number(currentChatId.value),
-        };
-
-        // 서버에 메시지 전송
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
-            messageData,
-            {
-                withCredentials: true,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const savedMessage = response.data;
-
-        // 임시 메시지를 서버에서 받은 실제 메시지로 교체 (이중 전송 방지)
-        const tempIndex = messages.value.findIndex((m) => m.id === tempId);
-        if (tempIndex !== -1) {
-            messages.value.splice(tempIndex, 1, {
-                id: savedMessage.id,
-                content: savedMessage.content,
-                roomId: savedMessage.roomId,
-                timestamp: savedMessage.timestamp,
-                sender: savedMessage.sender,
-                senderId: savedMessage.senderId,
-            });
-        }
-
-        // 채팅방 목록의 마지막 메시지 정보 업데이트
-        updateLastMessage(currentChatId.value, content);
-    } catch (error) {
-        console.error("Failed to send message:", error);
-
-        // 임시 메시지 제거 (오류 발생 시)
-        const tempId = Date.now().toString();
-        const tempIndex = messages.value.findIndex(
-            (m) => m.id === tempId || m.pending
-        );
-        if (tempIndex !== -1) {
-            messages.value.splice(tempIndex, 1);
-        }
-
-        // 에러 메시지 표시
-        const errorMessage =
-            error.response?.data?.message ||
-            error.message ||
-            "메시지 전송에 실패했습니다.";
-        alert(errorMessage);
-    }
-};
+    });
+});
 
 // Update the last message for a chat room
 const updateLastMessage = (chatId, content) => {
@@ -700,15 +678,16 @@ const formatMessageTime = (timestamp) => {
     border-left: 3px solid #4457ff;
 }
 
-.room-avatar {
+.rooms-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
     overflow: hidden;
     margin-right: 12px;
+    position: relative;
 }
 
-.room-avatar img {
+.rooms-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -1133,5 +1112,41 @@ const formatMessageTime = (timestamp) => {
         width: 100%;
         height: 200px;
     }
+}
+
+/* 그룹 아바타 스타일 */
+.group-avatar {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+    background-color: #e0e0e0;
+}
+
+.avatar-part {
+    overflow: hidden;
+    position: relative;
+    background-color: #f0f0f0;
+}
+
+.avatar-part img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.part-1 {
+    grid-area: 1 / 1 / 2 / 2;
+}
+.part-2 {
+    grid-area: 1 / 2 / 2 / 3;
+}
+.part-3 {
+    grid-area: 2 / 1 / 3 / 2;
+}
+.part-4 {
+    grid-area: 2 / 2 / 3 / 3;
 }
 </style>
