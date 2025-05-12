@@ -53,7 +53,7 @@
             </h3>
             <div class="location-details">
               <p class="location-address">{{ event.locationDetail }}</p>
-              <div id="kakao-map" style="width:100%; height:400px; border-radius: 12px;"></div>
+              <div id="google-map" style="width:100%; height:400px; border-radius: 12px;"></div>
             </div>
           </div>
 
@@ -121,7 +121,8 @@
                 </router-link>
 
                 <div class="p-0">
-                  <router-link v-if="!hasReviewed && isParticipating && userId" :to="`/reviewEvent/${event.id}`">
+                  <router-link v-if="!hasReviewed && isParticipating && userId && event.createdBy.id != userId"
+                  :to="`/reviewEvent/${event.id}`">
                     <button class="review-btn">
                       Review
                     </button>
@@ -605,77 +606,91 @@ export default {
       selectedImage.value = modalImages.value[currentImageIndex.value];
     }
   };
-  const loadMap = () => {
-  console.log('📍 지도 로딩 시작');
-  console.log('event.location:', event.value.location);
-  console.log('event.locationDetail:', event.value.locationDetail);
-  if (!window.kakao || !window.kakao.maps || !event.value.location) {
-  console.warn('❗카카오맵 객체 또는 주소 없음');
-  return;}
-  const geocoder = new window.kakao.maps.services.Geocoder();
-  const fullAddress = event.value.location;
+  const loadMap = async () => {
+  const geocoder = new google.maps.Geocoder();
+  const address = event.value.locationDetail || event.value.location;
+  console.log("📍 [loadMap] 입력된 주소:", address);
+  console.log("📍 [loadMap] event.value 전체 확인:", event.value);
+  if (!google || !google.maps || !address) {
+    console.warn('Google Maps 객체 또는 주소 없음');
+    return;
+  }
 
-  geocoder.addressSearch(fullAddress, (result, status) => {
-    console.log('검색 결과:', result);
-    console.log('상태:', status);
+  geocoder.geocode({ address }, (results, status) => {
+    if (status === 'OK' && results.length > 0) {
+      const location = results[0].geometry.location;
 
-    if (status === window.kakao.maps.services.Status.OK) {
-      const container = document.getElementById('kakao-map');
-      const options = {
-        center: new window.kakao.maps.LatLng(result[0].y, result[0].x),
-        level: 3,
-      };
-      const map = new window.kakao.maps.Map(container, options);
+      const map = new google.maps.Map(document.getElementById("google-map"), {
+        center: location,
+        zoom: 15,
+      });
 
-      new window.kakao.maps.Marker({
-        map: map,
-        position: new window.kakao.maps.LatLng(result[0].y, result[0].x),
+      new google.maps.Marker({
+        position: location,
+        map,
       });
     } else {
-      console.warn('주소 검색 실패:', fullAddress);
+      console.warn("주소 검색 실패", status);
     }
   });
 };
+const waitForGoogleMaps = () => {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (window.google && window.google.maps) {
+        resolve();
+      } else {
+        setTimeout(check, 100);
+      }
+    };
+    check();
+  });
+};
+const handleKeydown = (e) => {
+    if (showModal.value) {
+      if (e.key === 'Escape') closeModal();
+      else if (e.key === 'ArrowLeft') previousImage();
+      else if (e.key === 'ArrowRight') nextImage();
+    }
+    };
 watch(
-  () => event.value,
-  (newEvent) => {
-    console.log('🟡 watch 실행됨:', newEvent.location);
-    if (newEvent.locationDetail) {
+  () => event.value.locationDetail,
+  (newLocation) => {
+    if (newLocation && window.google?.maps) {
       loadMap();
+    } else {
+      // Google Maps API 로딩 대기
+      waitForGoogleMaps().then(loadMap);
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true }
 );
   onMounted(() => {
-      const eventId = parseInt(window.location.pathname.split('/').pop()); // Extract event ID from URL
-      fetchEvent(eventId);
-      
-      const userId = sessionStorage.getItem('userId');
-      checkUserParticipation(eventId, userId); // 사용자 참여 여부 확인
-      // 키보드 이벤트 핸들러 정의
-      const handleKeydown = (e) => {
-        if (showModal.value) {
-          if (e.key === 'Escape') {
-            closeModal();
-          } else if (e.key === 'ArrowLeft') {
-            previousImage();
-          } else if (e.key === 'ArrowRight') {
-            nextImage();
-          }
-        }
-      };
-      
-      // 키보드 이벤트 리스너 추가
-      window.addEventListener('keydown', handleKeydown);
-      console.log("mainImage:", event.value.mainImage);
-  // 클린업 함수 반환
-  onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeydown);
-    document.body.style.overflow = 'auto'; // 스크롤 복원
-    loadMap();
-  });
+  const eventId = parseInt(window.location.pathname.split('/').pop());
+  fetchEvent(eventId);
+
+  const userId = sessionStorage.getItem('userId');
+  checkUserParticipation(eventId, userId);
+
+  
+
+  window.addEventListener('keydown', handleKeydown);
+
+  // Google Maps 스크립트가 이미 로드됐는지 확인
+  // ✅ 여기에 추가!
+  if (!window.google || !window.google.maps) {
+    waitForGoogleMaps().then(() => {
+      if (event.value.locationDetail || event.value.location) loadMap();
+    });
+  } else {
+    if (event.value.locationDetail || event.value.location) loadMap();
+  }
 });
-    const seoulDistrictsMap = {
+ onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+  document.body.style.overflow = 'auto';
+});
+const seoulDistrictsMap = {
       "Gangnam-gu":
         "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d50648.029568312784!2d127.02503933400305!3d37.49608024545733!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x357ca4235fb589fb%3A0xb331971bc570bb6a!2z7ISc7Jq47Yq567OE7IucIOqwleuCqOq1rA!5e0!3m2!1sko!2skr!4v1738819689190!5m2!1sko!2skr",
       "Gangdong-gu":
@@ -756,7 +771,9 @@ watch(
       currentImageIndex,
       modalImages,
     };
+    
   },
+  
   
 };
 </script>

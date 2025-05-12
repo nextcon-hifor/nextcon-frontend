@@ -49,30 +49,13 @@
                         </div>
                     </div>
                     <div class="stars-container">
-                        <router-link :to="`/reviews/${wantShowUserId}`">
-                            <span v-for="star in 5" :key="star">
-                                <i
-                                    :class="
-                                        star <= user.averageRating
-                                            ? 'fas fa-star'
-                                            : 'far fa-star'
-                                    "
-                                    style="font-size: 24px"
-                                ></i>
-                            </span>
-                            <!--event.rate-->
-                            <span
-                                class="host-info-num"
-                                style="
-                                    margin-left: 10px;
-                                    font-size: 16px;
-                                    color: #555;
-                                "
-                            >
-                                {{ user.averageRating }}
-                                <!--event.rate.toFixed(1)-->
-                            </span>
-                        </router-link>
+                        <router-link :to="`/reviews/${wantShowUserId}`" class="rating-link">
+                            <i class="fa-solid fa-star rating-star"></i>
+                            <span class="rating-value">
+                            {{ user.averageRating }}({{ user.totalReviews || 0 }})
+                        </span>
+                        <span class="review-link-icon">&gt;</span>
+                    </router-link>
                     </div>
                 </div>
             </div>
@@ -387,6 +370,7 @@ const getAverageRating = async (userId) => {
             { withCredentials: true }
         );
         user.averageRating = ratingResponse.data.average || 0;
+        //user.totalReviews = ratingResponse.data.totalReviews || 0; // 리뷰 개수 추가
     } catch (error) {
         console.error("Failed to fetch average rating: ", error);
     }
@@ -584,6 +568,15 @@ const fetchAllEvents = async () => {
                         mappedEvent.averageRating = "리뷰 없음";
                         mappedEvent.hasReviews = false;
                     }
+                    let totalReviewCount = 0;
+                    for (const event of hostResponse.data) {
+                        const reviewsResponse = await axios.get(
+                            `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
+                            { withCredentials: true }
+                        );
+                        totalReviewCount += reviewsResponse.data.length;
+                    }
+                    user.totalReviews = totalReviewCount;
                 } catch (error) {
                     console.warn("리뷰 데이터 가져오기 실패:", error);
                     mappedEvent.averageRating = "리뷰 없음";
@@ -654,6 +647,7 @@ onMounted(() => {
     getUser(wantShowUserId);
     getAverageRating(wantShowUserId);
     fetchAllEvents();
+    console.log('총 참여 이벤트 개수:', participatedEvents.value.length);
 });
 </script>
 
@@ -987,14 +981,45 @@ a {
 .rating-value {
     font-weight: 600;
     color: #333;
-    font-size: 0.9rem;
+    margin-right: 5px;
+}
+.rating-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #333;
+    text-decoration: none;
 }
 
+.review-link-icon {
+    
+    font-weight: bold;
+    color: #888;
+    transition: color 0.2s ease;
+}
+
+.rating-link:hover .review-link-icon {
+    color: #4457ff;}
 /* 리뷰 없음 텍스트 - 이미지에 보이는 스타일 매칭 */
 .no-review-text {
     color: #999;
     font-style: italic;
     font-size: 0.85rem;
+}
+.review-link-icon {
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s ease;
+    font-weight: bold;
+}
+.rating-star {
+    color: #FFD700;
+    font-size: 22px;
+    margin-right: 5px;
+}
+.review-link-icon:hover {
+    color: #4457ff;
 }
 /* 반응형 스타일 */
 @media screen and (max-width: 768px) {
