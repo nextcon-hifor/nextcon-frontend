@@ -96,20 +96,29 @@
                                             class="col-4 mp-event-img"
                                             :style="{
                                                 backgroundImage: `url(${event.mainImage})`,
+                                                opacity: event.isDeleted ? '0.5' : '1'
                                             }"
-                                        ></div>
+                                        ><!-- 참가자 수 뱃지 추가 -->
+                                    <div class="participants-badge">
+                                        <i class="fas fa-user-friends"></i>
+                                        <span>{{ event.participants }}/{{ event.maxParticipants }}</span>
+                                    </div>
+                                    </div>
                                         <div class="col-8">
-                                            <p class="mp-event-title">
+                                           <!-- 이벤트 제목 -->
+                                            <h3 class="event-title">
                                                 {{ event.title }}
-                                            </p>
-                                            <span>{{ event.participants }}</span
-                                            >/<span>{{
-                                                event.maxParticipants
-                                            }}</span>
+                                            </h3>
+                                             <!-- 평점 표시 -->
                                             <div class="event-rating">
-                                                <i class="fas fa-star"></i>
-                                                <span>
-                                                    {{ event.averageRating }}
+                                                <!-- 리뷰가 있는 경우 -->
+                                                <template v-if="event.averageRating !== '리뷰 없음'">
+                                                    <i class="fas fa-star"></i>
+                                                    <span class="rating-value">{{ event.averageRating }}</span>
+                                                </template>
+                                                <!-- 리뷰가 없는 경우 -->
+                                                <span v-else class="no-review-text">
+                                                    리뷰 없음
                                                 </span>
                                             </div>
                                         </div>
@@ -567,10 +576,18 @@ const fetchAllEvents = async () => {
                     );
                     const ratings = ratingResponse.data.map((review) => review.rating);
                     const totalRating = ratings.reduce((sum, rating) => sum + rating, 0);
-                    mappedEvent.averageRating = ratings.length ? (totalRating / ratings.length).toFixed(1) : "리뷰 없음";
+                    // 평점 설정 - 리뷰가 없는 경우 '리뷰 없음' 텍스트 사용
+                    if (ratings.length) {
+                        mappedEvent.averageRating = (totalRating / ratings.length).toFixed(1);
+                        mappedEvent.hasReviews = true;
+                    } else {
+                        mappedEvent.averageRating = "리뷰 없음";
+                        mappedEvent.hasReviews = false;
+                    }
                 } catch (error) {
                     console.warn("리뷰 데이터 가져오기 실패:", error);
                     mappedEvent.averageRating = "리뷰 없음";
+                    mappedEvent.hasReviews = false;
                 }
                 return mappedEvent;
             })
@@ -753,7 +770,9 @@ a {
     transition: box-shadow 0.3s ease;
     position: relative;
 }
-
+.mp-card:hover .event-title {
+    color: #4457ff;
+}
 .mp-card:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -763,8 +782,72 @@ a {
     background-position: center;
     border-radius: 8px;
     transition: opacity 0.3s ease;
+    min-height: 100px;
+    position:relative
+}
+/* 이벤트 제목 */
+.event-title-container {
+    margin-bottom: 6px;
+}
+.event-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 5px 0;
+    line-height: 1.3;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
+}
+.deleted-tag {
+    font-size: 0.7rem;
+    font-weight: normal;
+    color: #999;
+    font-style: italic;
 }
 
+/* 참가자 수 뱃지 */
+.participants-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    backdrop-filter: blur(2px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.mp-card:hover .participants-badge {
+    background-color: rgba(0, 0, 0, 0.75);
+    transform: translateY(-2px);
+}
+
+.participants-badge i {
+    font-size: 0.7rem;
+}
+
+/* 참가자 수 */
+.participants-info {
+    margin-right: 15px;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.participants-current {
+    font-weight: 500;
+}
+
+.participants-max {
+    color: #777;
+}
 .mp-event-title {
     font-size: 18px;
     margin-top: 10px;
@@ -874,6 +957,45 @@ a {
   font-size: 14px;
   color: #555;
 }
+/* 리뷰 없음 텍스트 스타일 */
+.no-review-text {
+    color: #999;
+    font-style: italic;
+    font-size: 0.9em;
+    background-color: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-left: 3px;
+}
+/* 이벤트 평점 컨테이너 스타일 개선 */
+.event-rating {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
+}
+.star-icon {
+    color: #FFD700;
+    font-size: 0.9rem;
+    margin-right: 4px;
+}
+.event-rating .fas.fa-star {
+    color: #ffd700;
+    font-size: 0.9rem;
+    margin-right: 4px;
+}
+.rating-value {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+/* 리뷰 없음 텍스트 - 이미지에 보이는 스타일 매칭 */
+.no-review-text {
+    color: #999;
+    font-style: italic;
+    font-size: 0.85rem;
+}
 /* 반응형 스타일 */
 @media screen and (max-width: 768px) {
     .mypage-con {
@@ -915,6 +1037,18 @@ a {
         font-size: 12px;
         padding: 4px 8px;
     }
+    .event-title {
+        font-size: 0.9rem;
+    }
     
+    .event-rating .fas.fa-star,
+    .rating-value {
+        font-size: 0.8rem;
+    }
+    
+    .participants-badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+    }
 }
 </style>
