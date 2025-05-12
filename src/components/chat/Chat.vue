@@ -105,7 +105,12 @@
                     <div
                         v-for="message in messages"
                         :key="message.id"
-                        class="message other-message"
+                        :class="[
+                            'message',
+                            message.sender?.id === user.id
+                                ? 'own-message'
+                                : 'other-message',
+                        ]"
                     >
                         <div class="sender-name">
                             {{ message.sender?.username || "Unknown User" }}
@@ -156,6 +161,7 @@ import {
     watch,
     inject,
     onUnmounted,
+    reactive,
 } from "vue";
 import axios from "axios";
 import { useStore } from "vuex";
@@ -169,10 +175,10 @@ const isLoadingMessages = ref(false);
 const messages = ref([]);
 const newMessage = ref("");
 const messageContainer = ref(null);
-const user = ref({
+const user = reactive({
     email: "",
     username: "",
-    id: null,
+    id: "",
 });
 
 // Get socket and store from Vue app
@@ -188,7 +194,7 @@ const { joinRoom, leaveRoom } = useChat();
 
 // 유저 데이터 가져오기
 const getUser = async (userId) => {
-    if (user.value.username) {
+    if (user.username) {
         return;
     }
 
@@ -200,10 +206,10 @@ const getUser = async (userId) => {
             }
         );
         const userData = response.data;
-        user.value.email = userData.email || "";
-        user.value.username = userData.username || "";
-        user.value.id = userData.id || "";
-        console.log("User data loaded:", user.value);
+        user.email = userData.email || "";
+        user.username = userData.username || "";
+        user.id = userData.id || "";
+        console.log("User id!!!!!!: ", user.id);
     } catch (error) {
         console.error("Failed to fetch user:", error);
     }
@@ -373,7 +379,7 @@ const selectChatRoom = async (chatId) => {
 
     try {
         // 사용자 정보가 있는 경우에만 메시지 가져오기
-        if (user.value.id) {
+        if (user.id) {
             await fetchChatMessages(chatId);
             const room = chatRooms.value.find((r) => r.id === chatId);
             if (room) {
@@ -439,15 +445,16 @@ const handleConnectionChange = (isConnected) => {
 onMounted(async () => {
     console.log("Chat 컴포넌트 마운트");
 
+    // 사용자 정보를 가장 먼저 가져오기
+    if (currentUserId.value) {
+        await getUser(currentUserId.value);
+    }
+
+    // 소켓 연결은 사용자 정보 로드 후에
     if (!connectionStatus.connected && !connectionStatus.connecting) {
         const token = store.getters.token;
         socket.auth = { token };
         socket.connect();
-    }
-
-    // 사용자 정보 먼저 가져오기
-    if (currentUserId.value) {
-        await getUser(currentUserId.value);
     }
 
     // 소켓 이벤트 리스너 등록
@@ -460,7 +467,7 @@ onMounted(async () => {
     });
 
     // 사용자 정보가 로드된 후에 채팅방 목록 가져오기
-    if (user.value.id) {
+    if (user.id) {
         await fetchChatRooms();
     }
 });
@@ -490,9 +497,9 @@ const sendNewMessage = async () => {
         content: content,
         roomId: Number(currentChatId.value),
         sender: {
-            id: user.value.id,
-            username: user.value.username,
-            email: user.value.email,
+            id: user.id,
+            username: user.username,
+            email: user.email,
         },
     };
 
@@ -816,6 +823,10 @@ const formatMessageTime = (timestamp) => {
     align-self: flex-end;
 }
 
+.own-message .sender-name {
+    color: white;
+}
+
 .other-message {
     margin-right: auto;
     margin-left: 0;
@@ -836,8 +847,7 @@ const formatMessageTime = (timestamp) => {
     color: #999;
 }
 
-.own-message .message-time,
-.own-message-time {
+.own-message .message-time {
     color: rgba(255, 255, 255, 0.8);
 }
 
@@ -1117,12 +1127,54 @@ const formatMessageTime = (timestamp) => {
 @media screen and (max-width: 768px) {
     .chat-container {
         flex-direction: column;
-        height: 600px;
+        height: 100vh;
+        max-width: 100vw;
+        min-width: 0;
+        padding: 8px;
     }
 
     .chat-sidebar {
         width: 100%;
-        height: 200px;
+        height: 180px;
+        min-width: 0;
+        padding: 8px 0 0 0;
+    }
+
+    .chat-room-item {
+        padding: 16px 18px;
+    }
+
+    .chat-messages-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 180px);
+        min-height: 0;
+        padding: 8px 0 70px 0; /* 입력창 높이만큼 아래 공간 확보 */
+        box-sizing: border-box;
+    }
+
+    .messages-wrapper {
+        flex-grow: 1;
+        overflow-y: auto;
+        min-height: 0;
+        max-height: 100%;
+        padding: 18px 6px 18px 6px;
+    }
+
+    .message {
+        margin-bottom: 18px;
+        padding: 14px 18px;
+        max-width: 85%;
+    }
+
+    .message-input-container {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        z-index: 10;
+        padding: 16px 10px;
+        box-sizing: border-box;
     }
 }
 
