@@ -67,22 +67,18 @@
                 <div class="form-group">
                     <div class="row half-input-row">
                         <div class="col-6">
-                            <label for="roadAddress">Road Name Address</label>
+                            <label for="place-autocomplete">Road Name Address</label>
+                            <div id="place-autocomplete" class="autocomplete-container"></div>
+                            <input type="hidden" id="hidden-road-address">
+                        </div>
+                        <div class="col-6">
+                            <label for="detailAddress">Detail Address</label>
                             <input
                                 type="text"
-                                v-model="form.roadAddress"
-                                placeholder="Click to search"
-                                @click="openAddressSearch"
-                                readonly
-                                required/>
-                            </div>
-                            <div class="col-6">
-                                <label for="detailAddress">Detail Address</label>
-                                <input
-                                    type="text"
-                                    v-model="form.detailAddress"
-                                    placeholder="e.g., Apt 101-504"
-                                    required/>
+                                v-model="form.detailAddress"
+                                placeholder="e.g., Apt 101-504"
+                                required
+                            />
                         </div>
                     </div>
                 </div>
@@ -329,8 +325,89 @@ const form = ref({
     price: 0,
     mainImage: "", // 첫 번째 이미지 URL
     images: [], // 나머지 이미지 URL 배열
+    latitude: null,     // 추가
+    longitude: null,    // 추가
 });
 const editor = ref(null); // 초기값을 null로 설정
+const autocompleteInput = ref(null);
+let placeAutocompleteElement = null; // 자동완성 인스턴스 저장 변수
+// 구글 맵 API 로드 체크 함수 (업데이트)
+const isGoogleMapsLoaded = () => {
+  return window.google && 
+         window.google.maps && 
+         window.google.maps.places && 
+         window.google.maps.places.PlaceAutocompleteElement;
+};
+// PlaceAutocompleteElement 생성 함수
+
+// 자동완성 초기화 함수 (새로운 API 사용)
+const initAutocomplete = async () => {
+  try {
+    // Google Maps Places 라이브러리 가져오기
+    await google.maps.importLibrary("places");
+    
+    console.log("Creating Google Places PlaceAutocompleteElement...");
+    
+    // 이미 존재하는 요소 확인 및 제거
+    const container = document.getElementById("place-autocomplete");
+    if (!container) {
+      console.error("Place autocomplete container not found");
+      return;
+    }
+    
+    container.innerHTML = ""; // 기존 내용 비우기
+    
+    // 새 PlaceAutocompleteElement 생성
+    const pac = new google.maps.places.PlaceAutocompleteElement({
+      componentRestrictions: { country: "kr" } // 한국 지역으로 제한
+    });
+    
+    // 요소 스타일 및 ID 설정
+    pac.id = "pac-input";
+    
+    // 컨테이너에 추가
+    container.appendChild(pac);
+    // 이벤트 리스너 연결 - 주의: gmp-placeselect가 올바른 이벤트명
+    pac.addEventListener("gmp-select", async ({ placePrediction }) => {
+      try {
+        // 선택한 장소 데이터 가져오기
+        const place = placePrediction.toPlace();
+        
+        // 필요한 필드 가져오기 (formattedAddress와 location)
+        await place.fetchFields({ 
+          fields: ['formattedAddress', 'location'] 
+        });
+         // 여기에 로그 추가!
+        console.log("📦 place full info:", place.toJSON());
+        const address = place.formattedAddress;
+        const lat = place.location.lat;
+        const lng = place.location.lng;
+
+        // ⬇ Vue reactive 데이터에 설정
+        form.value.roadAddress = address;
+        form.value.latitude = lat;
+        form.value.longitude = lng;
+        
+        console.log("✅ Selected place:", place.formattedAddress);
+        console.log("📍 Coordinates:", place.location.lat, place.location.lng);
+        const hiddenInput = document.querySelector("#hidden-road-address")?.setAttribute("value", place.formattedAddress);
+        if (hiddenInput) {
+        hiddenInput.setAttribute("value", address);
+        console.log(hiddenInput)
+        }
+
+        console.log("📌 roadAddress set to:", address);
+      } catch (error) {
+        console.error("❌ Error processing selected place:", error);
+      }
+    });
+    
+    console.log("✅ Google Places PlaceAutocompleteElement initialized successfully");
+  } catch (error) {
+    console.error("❌ Error initializing PlaceAutocompleteElement:", error);
+  }
+};
+
 onMounted(() => {
     editor.value = new Editor({
         extensions: [StarterKit],
@@ -340,6 +417,22 @@ onMounted(() => {
         },
     });
     console.log("Editor instance:", editor.value);
+    // Google Maps API가 로드되었는지 확인하고 초기화
+  if (window.google?.maps) {
+    initAutocomplete();
+  } else {
+    // Google Maps API 스크립트 동적 로드
+    const script = document.createElement("script");
+    script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCIAP1lt-uvyq_6GSpYkQ9LolJCzfS-qhs&libraries=places&callback=initAutocomplete&loading=async";
+    script.async = true;
+    script.defer = true;
+    
+    // 전역 콜백 함수 등록
+    window.initAutocomplete = initAutocomplete;
+    
+    document.head.appendChild(script);
+    console.log("Google Maps API script added to page");
+  }
 });
 onBeforeUnmount(() => {
     if (editor.value) {
@@ -355,16 +448,7 @@ watch(
         }
     }
 );
-const openAddressSearch = () => {
-  new window.daum.Postcode({
-    oncomplete: (data) => {
-      console.log("✅ 주소 검색 완료:", data.roadAddress); // 👈 이게 먼저 출력돼야 함
-      form.value.roadAddress = data.roadAddress;
-    },
-    width: '100%',
-    height: '100%',
-  }).open();
-};
+
 const uploadedFiles = ref([]);
 const maxFiles = 5;
 
@@ -427,13 +511,19 @@ const timeOptions = Array.from({ length: 48 }, (_, i) => {
 const router = useRouter(); // Vue Router에 접근
 const userId = sessionStorage.getItem("userId");
 const postEvent = async () => {
+    form.value.roadAddress = document.querySelector("#hidden-road-address")?.value || form.value.roadAddress;
     console.log("🚨 form.roadAddress in postEvent:", form.value.roadAddress);
+
     try {
         if (!form.value.name.trim()) {
             alert("Please enter an event name.");
             return;
         }
-        
+        // ✅ 여기에 추가
+        if (!form.value.roadAddress) {
+            alert("Please select an address from the Google suggestion list.");
+            return;
+        }
         if (form.value.maxParticipants <= form.value.minParticipants) {
             alert(
                 "The maximum number of participants must be greater than the minimum number."
@@ -516,7 +606,9 @@ const postEvent = async () => {
             images: images,
             location: form.value.roadAddress,
             locationDetail: `${form.value.roadAddress} ${form.value.detailAddress}`,
-        };
+            latitude: form.value.latitude,     // 추가
+            longitude: form.value.longitude,   // 추가
+            };
 
         // 최종 데이터 구성
         const enrichedFormData = {
@@ -986,7 +1078,7 @@ const openPopup = () => {
     }
 
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 30px;
     }
 
     .form-group label {
@@ -1387,6 +1479,15 @@ const openPopup = () => {
         color: white;
         font-size: 18px;
         z-index: 9999;
+    }
+    .autocomplete-container input {
+        border: none;
+        outline: none;
+        width: 100%;
+    }
+    /* Google Maps 자동완성 드롭다운이 잘리지 않도록 설정 */
+    .pac-container {
+        z-index: 1050 !important; /* 더 높은 z-index 값 */
     }
 }
 </style>

@@ -49,32 +49,12 @@
                         </div>
                     </div>
                     <div class="stars-container">
-                        <span
-                            v-for="star in 5"
-                            :key="star"
-                            @click="goToSeeReviews"
-                        >
-                            <i
-                                :class="
-                                    star <= user.averageRating
-                                        ? 'fas fa-star'
-                                        : 'far fa-star'
-                                "
-                                style="font-size: 24px"
-                            ></i>
+                        <router-link :to="`/reviews/${wantShowUserId}`">
+                            <i class="fa-solid fa-star rating-star"></i>
+                            <span class="rating-value">
+                            {{ user.averageRating }}({{ user.totalReviews || 0 }})
                         </span>
-                        <!--event.rate-->
-                        <span
-                            class="host-info-text"
-                            style="
-                                margin-left: 10px;
-                                font-size: 16px;
-                                color: #555;
-                            "
-                        >
-                            {{ user.averageRating }}
-                            <!--event.rate.toFixed(1)-->
-                        </span>
+                    </router-link>
                     </div>
                 </div>
             </div>
@@ -268,6 +248,8 @@ const getAverageRating = async (userId) => {
             { withCredentials: true }
         );
         user.averageRating = ratingResponse.data.average || 0;
+        
+        
     } catch (error) {
         console.error("Failed to fetch average rating: ", error);
     }
@@ -318,6 +300,15 @@ const fetchAllEvents = async () => {
             { withCredentials: true }
         );
         likedEvents.value = likedResponse.data.map(mapEventData);
+        let totalReviewCount = 0;
+        for (const event of hostResponse.data) {
+            const reviewsResponse = await axios.get(
+                `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
+                { withCredentials: true }
+            );
+            totalReviewCount += reviewsResponse.data.length;
+        }
+        user.totalReviews = totalReviewCount || 0;
     } catch (error) {
         console.error("Error fetching events:", error);
     }
@@ -557,8 +548,13 @@ a {
     color: #ffd700;
     margin-top: 10px;
     gap: 1px;
+    cursor: pointer;
 }
-
+.rating-star {
+    color: #FFD700;
+    font-size: 22px;
+    margin-right: 5px;
+}
 /* 리뷰 디자인 추가 */
 .review-card {
     background-color: #fff;
@@ -597,9 +593,9 @@ a {
 }
 
 .rating-value {
-    margin-left: 5px;
+    font-weight: 600;
     color: #333;
-    font-weight: bold;
+    margin-right: 5px;
 }
 
 .review-content {
