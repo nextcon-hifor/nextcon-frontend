@@ -7,8 +7,8 @@ export default {
         // 소켓 인스턴스 생성
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
         const socket = io(API_BASE_URL, {
-            withCredentials: false, // 나중에 true로 바꾸고, cors 설정 해야함!!
-            autoConnect: false, // 필요할 때 수동으로 연결
+            withCredentials: true,
+            autoConnect: false,
         });
 
         // 애플리케이션 전역에서 소켓 접근 가능하도록 설정
@@ -19,7 +19,7 @@ export default {
 
         // 글로벌 소켓 메서드
         app.config.globalProperties.$sendMessage = (payload) => {
-            socket.emit("chat:message", payload);
+            socket.emit("sendMessage", payload);
         };
 
         // 연결 상태 관리

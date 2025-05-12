@@ -9,19 +9,19 @@ export function useChat() {
 
     // 메시지 수신 처리
     const setupMessageListener = () => {
-        socket.on("chat:message", (message) => {
+        socket.on("newMessage", (message) => {
             messages.value.push(message);
         });
     };
 
     // 채팅방 입장
     const joinRoom = (chatId) => {
-        socket.emit("chat:join", { chatId });
+        socket.emit("join", { roomId: chatId });
     };
 
     // 채팅방 나가기
     const leaveRoom = (chatId) => {
-        socket.emit("chat:leave", { chatId });
+        socket.emit("leave", { roomId: chatId });
     };
 
     onMounted(() => {

@@ -209,6 +209,7 @@ const getUser = async (userId) => {
         user.email = userData.email || "";
         user.username = userData.username || "";
         user.id = userData.id || "";
+        user.userId = userId;
         console.log("User id!!!!!!: ", user.id);
     } catch (error) {
         console.error("Failed to fetch user:", error);
@@ -498,6 +499,7 @@ const sendNewMessage = async () => {
         roomId: Number(currentChatId.value),
         sender: {
             id: user.id,
+            userId: currentUserId.value,
             username: user.username,
             email: user.email,
         },
@@ -509,30 +511,8 @@ const sendNewMessage = async () => {
     newMessage.value = "";
 
     try {
-        // API 요청 먼저 수행
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/chatmessages`,
-            messageData,
-            {
-                withCredentials: true,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        console.log("메시지 저장 응답:", response.data);
-
-        // API 응답으로 받은 메시지를 화면에 즉시 표시
-        if (response.data) {
-            messages.value.push(response.data);
-            nextTick(() => {
-                scrollToBottom();
-            });
-        }
-
-        // 소켓 emit은 제거 (백엔드에서 처리하도록)
-        // socket.emit("sendMessage", messageData);
+        // WebSocket을 통해 메시지 전송
+        socket.emit("sendMessage", messageData);
     } catch (error) {
         console.error("메시지 전송 중 오류 발생:", error);
         alert("메시지 전송에 실패했습니다. 다시 시도해주세요.");
