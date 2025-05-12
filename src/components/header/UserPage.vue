@@ -85,9 +85,9 @@
                     <div class="row">
                         <div
                             class="col-md-6 col-sm-12"
-                            v-for="event in hostEvents"
+                            v-for="event in pagedHostEvents"
                             :key="event.id"
-                            :event="event"
+                            
                         >
                             <router-link :to="`/events/${event.id}`">
                                 <div class="mp-card">
@@ -118,6 +118,12 @@
                             </router-link>
                         </div>
                     </div>
+                <!-- 🔽 페이지네이션 버튼 추가 -->
+                    <div class="pagination">
+                        <button @click="hostPage--" :disabled="hostPage === 1">Prev</button>
+                        <span>{{ hostPage }} / {{ hostTotalPages }}</span>
+                        <button @click="hostPage++" :disabled="hostPage === hostTotalPages">Next</button>
+                    </div>
                 </div>
 
                 <!-- Joined Events -->
@@ -126,28 +132,31 @@
                     <div class="row">
                         <div
                             class="col-md-6 col-sm-12"
-                            v-for="event in participatedEvents"
+                            v-for="event in pagedJoinedEvents"
                             :key="event.id"
-                            :event="event"
+                            
                         >
-                            <router-link :to="`/events/${event.id}`">
+                            <router-link :to="event.isDeleted ? '#' : `/events/${event.id}`">
                                 <div class="mp-card">
                                     <div class="row">
                                         <div
                                             class="col-4 mp-event-img"
                                             :style="{
                                                 backgroundImage: `url(${event.mainImage})`,
+                                                opacity: event.isDeleted ? '0.5' : '1'
                                             }"
                                         ></div>
                                         <div class="col-8">
-                                            <p class="mp-event-title">
+                                            <p class="mp-event-title" :class="{ 'deleted-text': event.isDeleted }">
                                                 {{ event.title }}
+                                                <span v-if="event.isDeleted">(삭제됨)</span>
                                             </p>
                                             <p
                                                 class="mp-event-host"
                                                 @click.stop
                                             >
                                                 <router-link
+                                                    v-if="!event.isDeleted"
                                                     :to="`/userPage/${event.hostId}`"
                                                 >
                                                     <img
@@ -159,35 +168,44 @@
                                                     />
                                                     {{ event.host }}
                                                 </router-link>
+                                                <span v-else>{{ event.host }}</span>
                                             </p>
                                             <!-- 리뷰 버튼-->
-                                            <router-link
-                                                v-if="
-                                                    currentUserId ===
-                                                        wantShowUserId &&
-                                                    !event.hasReviewed
-                                                "
-                                                :to="`/reviewEvent/${event.id}`"
-                                                class="review-btn"
-                                            >
-                                                리뷰 작성
-                                            </router-link>
+                                            <div class="review-button-container" v-if="!event.isDeleted">
+                                            <!-- 1. 본인이 주최한 이벤트가 아니고, 리뷰 작성 가능한 경우 (파란색) -->
+                                                <router-link
+                                                    v-if="currentUserId === wantShowUserId && 
+                                                        !event.hasReviewed && 
+                                                        event.hostId !== currentUserId"
+                                                    :to="`/reviewEvent/${event.id}`"
+                                                    class="review-btn available"
+                                                    @click.stop
+                                                >
+                                                    리뷰 작성
+                                                </router-link>
+
+                                            <!-- 2. 본인이 주최한 이벤트가 아니고, 리뷰 작성 완료한 경우 (회색) -->
                                             <button
-                                                v-if="
-                                                    currentUserId ===
-                                                        wantShowUserId &&
-                                                    event.hasReviewed
-                                                "
+                                                v-else-if="currentUserId === wantShowUserId && 
+                                                        event.hasReviewed && 
+                                                        event.hostId !== currentUserId"
                                                 class="review-btn completed"
                                                 disabled
+                                                @click.stop
                                             >
                                                 리뷰 완료
                                             </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </router-link>
                         </div>
+                    </div>
+                    <div class="pagination">
+                        <button @click="joinedPage--" :disabled="joinedPage === 1">Prev</button>
+                        <span>{{ joinedPage }} / {{ joinedTotalPages }}</span>
+                        <button @click="joinedPage++" :disabled="joinedPage === joinedTotalPages">Next</button>
                     </div>
                 </div>
 
@@ -197,9 +215,9 @@
                     <div class="row">
                         <div
                             class="col-md-6 col-sm-12"
-                            v-for="event in likedEvents"
+                            v-for="event in pagedLikedEvents"
                             :key="event.id"
-                            :event="event"
+                            
                         >
                             <router-link :to="event.isDeleted ? '#' : `/events/${event.id}`">
                                 <div class="mp-card">
@@ -235,11 +253,42 @@
                                                 </router-link>
                                                 <span v-else>{{ event.host }}</span>
                                             </p>
+                                            <!-- 리뷰 버튼 - 참여 여부에 상관없이 모든 좋아요한 이벤트에 표시 -->
+                                            <div class="review-button-container" v-if="!event.isDeleted">
+                                                <!-- 본인이 주최한 이벤트가 아니고, 리뷰 작성 가능한 경우 (파란색) -->
+                                                <router-link
+                                                    v-if="currentUserId === wantShowUserId && 
+                                                        !event.hasReviewed && 
+                                                        event.hostId !== currentUserId"
+                                                    :to="`/reviewEvent/${event.id}`"
+                                                    class="review-btn available"
+                                                    @click.stop
+                                                >
+                                                    리뷰 작성
+                                                </router-link>
+
+                                                <!-- 본인이 주최한 이벤트가 아니고, 리뷰 작성 완료한 경우 (회색) -->
+                                                <button
+                                                    v-else-if="currentUserId === wantShowUserId && 
+                                                            event.hasReviewed && 
+                                                            event.hostId !== currentUserId"
+                                                    class="review-btn completed"
+                                                    disabled
+                                                    @click.stop
+                                                >
+                                                    리뷰 완료
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </router-link>
                         </div>
+                    </div>
+                    <div class="pagination">
+                        <button @click="likedPage--" :disabled="likedPage === 1">Prev</button>
+                        <span>{{ likedPage }} / {{ likedTotalPages }}</span>
+                        <button @click="likedPage++" :disabled="likedPage === likedTotalPages">Next</button>
                     </div>
                 </div>
             </div>
@@ -249,13 +298,13 @@
 
 <script setup>
 import { useStore } from "vuex";
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, computed } from "vue";
 import axios from "axios";
 
 const store = useStore();
 const currentUserId = ref(store.state.userId);
-const wantShowUserId = window.location.pathname.split("/").pop(); // Extract event ID from URL
-const fileInput = ref(null); // file input 요소에 대한 참조
+const wantShowUserId = window.location.pathname.split("/").pop();
+const fileInput = ref(null);
 
 const user = reactive({
     userId: "",
@@ -264,39 +313,33 @@ const user = reactive({
     gender: "",
     age: 0,
     nationality: "",
-    profileImage: "/profile-images/default-profile-image.png", // 정적 경로로 설정
+    profileImage: "/profile-images/default-profile-image.png",
     averageRating: 0,
 });
 
 const triggerFileInput = () => {
-    if (fileInput.value) {
-        fileInput.value.click(); // 클릭 이벤트로 파일 선택 창 열기
-    }
+    if (fileInput.value) fileInput.value.click();
 };
 
 const handleFileChange = async (event) => {
-    const file = event.target.files[0]; // 선택된 파일
+    const file = event.target.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("file", file); // 🔥 파일을 FormData에 추가
+    formData.append("file", file);
 
     try {
-        // 서버로 이미지 업로드
         const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/user/uploadProfileImage/${
-                user.userId
-            }`,
+            `${import.meta.env.VITE_API_BASE_URL}/user/uploadProfileImage/${user.userId}`,
             formData,
             {
-                headers: { "Content-Type": "multipart/form-data" }, // 파일 업로드를 위한 헤더 설정
-                withCredentials: true, // 인증 정보를 포함
+                headers: { "Content-Type": "multipart/form-data" },
+                withCredentials: true,
             }
         );
 
-        // 서버에서 반환된 이미지 URL로 업데이트
         if (response.data.imageUrl) {
-            user.profileImage = response.data.imageUrl; // 서버에서 반환된 경로 사용
+            user.profileImage = response.data.imageUrl;
         } else {
             console.warn("No image URL returned from the server.");
         }
@@ -305,18 +348,14 @@ const handleFileChange = async (event) => {
     }
 };
 
-// 유저 데이터 가져오기
 const getUser = async (userId) => {
     try {
         const response = await axios.get(
             `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${userId}`,
-            {
-                withCredentials: true, // 인증 정보를 포함
-            }
+            { withCredentials: true }
         );
         const userData = response.data;
 
-        // user 상태 업데이트
         user.userId = userData.userId || "";
         user.email = userData.email || "";
         user.username = userData.username || "";
@@ -331,12 +370,11 @@ const getUser = async (userId) => {
         console.error("Failed to fetch user:", error);
     }
 };
+
 const getAverageRating = async (userId) => {
     try {
         const ratingResponse = await axios.get(
-            `${
-                import.meta.env.VITE_API_BASE_URL
-            }/reviews/host/${userId}/average`,
+            `${import.meta.env.VITE_API_BASE_URL}/reviews/host/${userId}/average`,
             { withCredentials: true }
         );
         user.averageRating = ratingResponse.data.average || 0;
@@ -344,33 +382,50 @@ const getAverageRating = async (userId) => {
         console.error("Failed to fetch average rating: ", error);
     }
 };
+const pageSize = 6;
+const hostPage = ref(1);
+const joinedPage = ref(1);
+const likedPage = ref(1);
+const hostTotalPages = computed(() => Math.ceil(hostEvents.value.length / pageSize));
+const joinedTotalPages = computed(() => Math.ceil(participatedEvents.value.length / pageSize));
+const likedTotalPages = computed(() => Math.ceil(likedEvents.value.length / pageSize));
+const pagedHostEvents = computed(() => {
+    const start = (hostPage.value - 1) * pageSize;
+    return hostEvents.value.slice(start, start + pageSize);
+});
 
-// 탭별 이벤트 데이터
+const pagedJoinedEvents = computed(() => {
+    const start = (joinedPage.value - 1) * pageSize;
+    return participatedEvents.value.slice(start, start + pageSize);
+});
+
+const pagedLikedEvents = computed(() => {
+    const start = (likedPage.value - 1) * pageSize;
+    return likedEvents.value.slice(start, start + pageSize);
+});
+// 예: 탭 전환 시 페이지 번호 초기화 함수
+const resetPagination = () => {
+  hostPage.value = 1;
+  joinedPage.value = 1;
+  likedPage.value = 1;
+};
 const hostEvents = ref([]);
 const participatedEvents = ref([]);
 const likedEvents = ref([]);
 
-// 공통 매핑 함수
 const mapEventData = async (event) => {
     try {
-        // 호스트 프로필 이미지 가져오기
         let hostProfileImage = "";
         try {
             const hostResponse = await axios.get(
-                `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${
-                    event.createdBy?.userId || "unknown"
-                }`,
-                {
-                    withCredentials: true,
-                }
+                `${import.meta.env.VITE_API_BASE_URL}/user/getUser/${event.createdBy?.userId || "unknown"}`,
+                { withCredentials: true }
             );
             hostProfileImage = hostResponse.data.profileImage || "";
         } catch (hostError) {
             console.warn("호스트 정보를 가져오는데 실패했습니다:", hostError);
-            // 오류 발생 시 기본 이미지 사용
         }
 
-        // 리뷰 데이터 가져오기
         let hasReviewed = false;
         try {
             const reviewResponse = await axios.get(
@@ -382,27 +437,71 @@ const mapEventData = async (event) => {
             );
         } catch (reviewError) {
             console.warn("리뷰 정보를 가져오는데 실패했습니다:", reviewError);
-            // 오류 발생 시 기본값 false 사용
         }
-
+        // 정렬에 사용할 시간을 설정
+        let eventDateTime;
+        
+        // 다양한 날짜/시간 필드 조합 시도
+        if (event.date && event.time) {
+            // 표준 포맷 확인 (YYYY-MM-DD 및 HH:MM)
+            const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+            const timePattern = /^\d{2}:\d{2}(:\d{2})?$/;
+            
+            if (datePattern.test(event.date) && timePattern.test(event.time)) {
+                eventDateTime = new Date(`${event.date}T${event.time}`);
+            }
+        }
+        
+        // 다른 가능한 날짜 속성들 확인
+        if (!eventDateTime || isNaN(eventDateTime.getTime())) {
+            if (event.eventDate && event.eventTime) {
+                eventDateTime = new Date(`${event.eventDate}T${event.eventTime}`);
+            } else if (event.startDate && event.startTime) {
+                eventDateTime = new Date(`${event.startDate}T${event.startTime}`);
+            } else if (event.updatedAt) {
+                eventDateTime = new Date(event.updatedAt);
+            } else if (event.createdAt) {
+                eventDateTime = new Date(event.createdAt);
+            } else {
+                // 날짜 정보가 없는 경우 현재 시간 사용
+                eventDateTime = new Date();
+            }
+        }
+        
+        // 날짜가 유효한지 검증 (Invalid Date 방지)
+        const dateTimeValue = !isNaN(eventDateTime.getTime()) 
+            ? eventDateTime.getTime() 
+            : new Date().getTime();
+            
+        // 디버깅 로그
+        console.log(`Event ID: ${event.id}, Title: ${event.name}, DateTime: ${eventDateTime}, 
+            Raw date: ${event.date}, Raw time: ${event.time}`);
         return {
             id: event.id,
-            mainImage: event.mainImage || "/path/to/user-image.jpg", // 기본 이미지 경로 설정
+            mainImage: event.mainImage || "/path/to/user-image.jpg",
             title: event.name || "삭제된 이벤트",
             host: event.createdBy?.username || "알 수 없는 호스트",
             hostId: event.createdBy?.userId || "unknown",
-            hostProfileImage: hostProfileImage,
+            hostProfileImage,
             participants: event.participants || 0,
             maxParticipants: event.maxParticipants || 0,
-            hasReviewed: hasReviewed,
-            isDeleted: !event.name // 이벤트 이름이 없으면 삭제된 것으로 간주
+            hasReviewed,
+            isDeleted: !event.name,
+            // 원본 날짜/시간 필드들
+            date: event.date || event.eventDate || event.startDate || "",
+            time: event.time || event.eventTime || event.startTime || "",
+            // 가공된 정렬용 시간값
+            dateTime: dateTimeValue,
+            // 디버깅용 필드
+            dateTimeStr: eventDateTime.toString(),
+            createdAt: event.createdAt || new Date().toISOString(),
+            updatedAt: event.updatedAt || event.createdAt || new Date().toISOString()
         };
     } catch (error) {
         console.error("Error in mapEventData:", error);
-        // 에러 발생 시 기본값 반환
         return {
             id: event.id || "unknown",
-            mainImage: "/path/to/user-image.jpg", // 기본 이미지 경로 설정
+            mainImage: "/path/to/user-image.jpg",
             title: "삭제된 이벤트",
             host: "알 수 없는 호스트",
             hostId: "unknown",
@@ -410,77 +509,97 @@ const mapEventData = async (event) => {
             participants: 0,
             maxParticipants: 0,
             hasReviewed: false,
-            isDeleted: true
+            isDeleted: true,
+            dateTime: new Date().getTime(),
+            dateTimeStr: new Date().toString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
     }
 };
 
-// 이벤트 데이터 가져오기
+// 개선된 정렬 함수
+const sortEventsByDate = (events) => {
+    console.log("정렬 전 이벤트:", events.map(e => ({ id: e.id, title: e.title, dateTime: e.dateTimeStr })));
+    
+    // 더 안정적인 정렬 함수
+    const sorted = [...events].sort((a, b) => {
+        // 기본 정렬 기준: dateTime (timestamp)
+        if (a.dateTime && b.dateTime) {
+            return b.dateTime - a.dateTime;
+        }
+        
+        // dateTime이 없으면 updatedAt 기준
+        if (a.updatedAt && b.updatedAt) {
+            return new Date(b.updatedAt) - new Date(a.updatedAt);
+        }
+        
+        // 마지막으로 createdAt 기준
+        if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+        
+        // 정렬 기준이 없으면 순서 유지
+        return 0;
+    });
+    
+    console.log("정렬 후 이벤트:", sorted.map(e => ({ id: e.id, title: e.title, dateTime: e.dateTimeStr })));
+    return sorted;
+};
+
 const fetchAllEvents = async () => {
     try {
-        // Host 이벤트 가져오기
+        // 페이지네이션 초기화
+        resetPagination();
+       
         const hostResponse = await axios.get(
-            `${
-                import.meta.env.VITE_API_BASE_URL
-            }/events/getEventsByHostId/${wantShowUserId}`,
+            `${import.meta.env.VITE_API_BASE_URL}/events/getEventsByHostId/${wantShowUserId}`,
             { withCredentials: true }
         );
-        // 이벤트 데이터 매핑 및 리뷰 데이터 추가
+
         hostEvents.value = await Promise.all(
             hostResponse.data.map(async (event) => {
                 const mappedEvent = await mapEventData(event);
-
-                // 리뷰 데이터 가져오기
-                const ratingResponse = await axios.get(
-                    `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${
-                        event.id
-                    }`,
-                    { withCredentials: true }
-                );
-
-                const ratings = ratingResponse.data.map(
-                    (review) => review.rating
-                );
-                const totalRating = ratings.reduce(
-                    (sum, rating) => sum + rating,
-                    0
-                );
-                mappedEvent.averageRating = ratings.length
-                    ? (totalRating / ratings.length).toFixed(1)
-                    : "리뷰 없음";
-
+                try {
+                    const ratingResponse = await axios.get(
+                        `${import.meta.env.VITE_API_BASE_URL}/reviews/event/${event.id}`,
+                        { withCredentials: true }
+                    );
+                    const ratings = ratingResponse.data.map((review) => review.rating);
+                    const totalRating = ratings.reduce((sum, rating) => sum + rating, 0);
+                    mappedEvent.averageRating = ratings.length ? (totalRating / ratings.length).toFixed(1) : "리뷰 없음";
+                } catch (error) {
+                    console.warn("리뷰 데이터 가져오기 실패:", error);
+                    mappedEvent.averageRating = "리뷰 없음";
+                }
                 return mappedEvent;
             })
         );
+        hostEvents.value = sortEventsByDate(hostEvents.value);
 
-        // Participated 이벤트 가져오기
         const participatedResponse = await axios.get(
-            `${
-                import.meta.env.VITE_API_BASE_URL
-            }/participants/getParticipatedEvent/${wantShowUserId}`,
+            `${import.meta.env.VITE_API_BASE_URL}/participants/getParticipatedEvent/${wantShowUserId}`,
             { withCredentials: true }
         );
+        // 서버 응답 로깅
+        console.log("서버에서 받은 참여 이벤트:", participatedResponse.data);
         participatedEvents.value = await Promise.all(
-            participatedResponse.data.map(async (event) => {
-                return await mapEventData(event);
-            })
+            participatedResponse.data.map(async (event) => await mapEventData(event))
         );
+            participatedEvents.value = sortEventsByDate(participatedEvents.value);
 
-        // Liked 이벤트 가져오기
         const likedResponse = await axios.get(
-            `${
-                import.meta.env.VITE_API_BASE_URL
-            }/events/getLikedEvent/${wantShowUserId}`,
+            `${import.meta.env.VITE_API_BASE_URL}/events/getLikedEvent/${wantShowUserId}`,
             { withCredentials: true }
         );
-        // Promise.all을 사용하여 모든 매핑 작업이 완료될 때까지 기다림
+        // 서버 응답 로깅
+        console.log("서버에서 받은 좋아요 이벤트:", likedResponse.data);
         const mappedLikedEvents = await Promise.all(
             likedResponse.data.map(async (event) => {
                 try {
                     return await mapEventData(event);
                 } catch (error) {
                     console.warn(`이벤트 ID ${event.id} 매핑 중 오류:`, error);
-                    // 오류 발생 시 기본 삭제된 이벤트 객체 반환
                     return {
                         id: event.id || "unknown",
                         mainImage: "/path/to/default-image.jpg",
@@ -491,18 +610,21 @@ const fetchAllEvents = async () => {
                         participants: 0,
                         maxParticipants: 0,
                         hasReviewed: false,
-                        isDeleted: true
+                        isDeleted: true,
+                        dateTime: new Date().getTime(),
+                        createdAt: new Date().toISOString(),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
                     };
                 }
             })
         );
-        likedEvents.value = mappedLikedEvents;
+        likedEvents.value = sortEventsByDate(mappedLikedEvents);
     } catch (error) {
         console.error("Error fetching events:", error);
     }
 };
 
-// Participants 총합 계산 함수
 const getParticipantsTotal = () => {
     return hostEvents.value.reduce(
         (total, event) => total + (event.participants || 0),
@@ -510,14 +632,15 @@ const getParticipantsTotal = () => {
     );
 };
 
-// mounted 훅
 onMounted(() => {
-    const wantShowUserId = window.location.pathname.split("/").pop(); // Extract event ID from URL
+    const wantShowUserId = window.location.pathname.split("/").pop();
     getUser(wantShowUserId);
-    getAverageRating(wantShowUserId); // 평균 평점 가져오기
-    fetchAllEvents(); // 디폴트 탭 데이터
+    getAverageRating(wantShowUserId);
+    fetchAllEvents();
 });
 </script>
+
+
 
 <!-- css -->
 
@@ -628,6 +751,7 @@ a {
     padding: 10px;
     margin-bottom: 10px;
     transition: box-shadow 0.3s ease;
+    position: relative;
 }
 
 .mp-card:hover {
@@ -638,6 +762,7 @@ a {
     background-size: cover;
     background-position: center;
     border-radius: 8px;
+    transition: opacity 0.3s ease;
 }
 
 .mp-event-title {
@@ -674,22 +799,41 @@ a {
 }
 
 .review-btn {
-    background-color: #ccc;
-    color: white;
-    border: none;
-    border-radius: 1px;
-    padding: 5px 10px;
-    font-size: 14px;
-    cursor: pointer;
-    margin-top: 10px;
-    margin-left: 20px;
-    white-space: nowrap;
-    display: inline-block;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-left: 20px;
+  white-space: nowrap;
+  display: inline-block;
+  transition: background-color 0.2s, color 0.2s;
+  position: relative;
+  z-index: 10;
+}
+/* 리뷰 작성 가능 버튼 (파란색) */
+.review-btn.available {
+  background-color: #4457ff;
+  color: white;
 }
 
+.review-btn.available:hover {
+  background-color: #3346d3;
+}
+
+/* 리뷰 작성 완료 버튼 (회색) */
 .review-btn.completed {
-    color: gray;
-    cursor: not-allowed;
+  background-color: #ccc;
+  color: gray;
+  cursor: not-allowed;
+}
+
+/* 버튼 컨테이너 */
+.review-button-container {
+  margin-top: 5px;
+  position: relative;
+  z-index: 5;
 }
 .deleted-event {
     background-color: #f8f8f8;
@@ -700,7 +844,36 @@ a {
     color: #999;
     font-style: italic;
 }
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 10px;
+}
 
+.pagination button {
+  background-color: #f6f7f8;
+  border: 1px solid #d7d8d8;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination button:hover:not([disabled]) {
+  background-color: #e0e0e0;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 14px;
+  color: #555;
+}
 /* 반응형 스타일 */
 @media screen and (max-width: 768px) {
     .mypage-con {
@@ -726,18 +899,22 @@ a {
     }
 
     .mp-event-title {
-        font-size: 14px;
-    }
-
-    .review-btn {
         font-size: 12px;
-        padding: 4px 8px;
-        margin-left: 10px;
+    }
+    .mp-event-img {
+    min-height: 80px;
+  }
+    .review-btn {
+        margin-left: 0;
+        margin-top: 5px;
+        font-size: 11px;
+        padding: 3px 6px;
     }
 
     .review-btn.completed {
         font-size: 12px;
         padding: 4px 8px;
     }
+    
 }
 </style>
