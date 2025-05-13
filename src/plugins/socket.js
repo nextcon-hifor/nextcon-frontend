@@ -9,6 +9,11 @@ export default {
         const socket = io(API_BASE_URL, {
             withCredentials: true,
             autoConnect: false,
+            transports: ["websocket", "polling"],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            timeout: 10000,
         });
 
         // 애플리케이션 전역에서 소켓 접근 가능하도록 설정
@@ -38,7 +43,7 @@ export default {
         });
 
         socket.on("disconnect", (reason) => {
-            console.log("Socket disconnected");
+            console.log("Socket disconnected:", reason);
             connectionStatus.connected = false;
             // 특정 이유로 연결이 끊어진 경우 자동 재연결 시도
             if (reason === "io server disconnect") {
