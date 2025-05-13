@@ -294,10 +294,16 @@
                             >
                                 Submit event
                             </button>
+                            
                         </div>
                     </div>
                 </div>
             </form>
+            <!-- 로딩 오버레이 -->
+            <div v-if="isLoading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p class="loading-text">Uploading event... Please wait.</p>
+            </div>
         </div>
     </div>
 </template>
@@ -309,6 +315,8 @@ import { useRouter } from "vue-router";
 import { Editor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import { watch } from "vue";
+const isLoading = ref(false); // 로딩 여부를 추적
+
 // 폼 데이터 및 상태 관리
 const form = ref({
     category: "",
@@ -513,7 +521,7 @@ const userId = sessionStorage.getItem("userId");
 const postEvent = async () => {
     form.value.roadAddress = document.querySelector("#hidden-road-address")?.value || form.value.roadAddress;
     console.log("🚨 form.roadAddress in postEvent:", form.value.roadAddress);
-
+    isLoading.value = true;
     try {
         if (!form.value.name.trim()) {
             alert("Please enter an event name.");
@@ -629,7 +637,7 @@ const postEvent = async () => {
         );
 
         console.log("✅ [SUCCESS] Event created:", response.data);
-
+        isLoading.value = false;
         await router.push(`/events/${response.data.event.id}`);
     } catch (error) {
         console.error("❌ [ERROR] Failed to create event");
@@ -777,10 +785,45 @@ const openPopup = () => {
     popupWindow.document.write(popupContent);
     popupWindow.document.close();
 };
+
 </script>
 
 <!-- css -->
 <style scoped>
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #4a68ff;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+.loading-text {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 /* 반응형 모바일 css */
 @media screen and (max-width: 768px) {
     /* 기본 컨테이너 조정 */
@@ -848,6 +891,7 @@ const openPopup = () => {
     .form-group textarea {
         width: 100%;
         font-size: 14px;
+        text-align: center;
         border: 1px solid #ccc;
         border-radius: 12px;
         padding: 10px;
@@ -963,6 +1007,7 @@ const openPopup = () => {
     .form-group .half-input-row .col-6 {
         width: 100%;
     }
+    
 }
 
 /* 웹 */
@@ -1123,17 +1168,21 @@ const openPopup = () => {
     }
 
     .form-group select {
-        width: 100%;
-        height: 50px;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 24px;
-        box-sizing: border-box;
+        padding: 10px 30px 10px 10px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-color: white;
+        background-image: linear-gradient(45deg, transparent 50%, #555 50%),
+                            linear-gradient(-45deg, transparent 50%, #555 50%);
+        background-position: right 15px center, right 10px center;
+        background-size: 6px 6px;
+        background-repeat: no-repeat;
     }
 
     .form-group .text {
         font-size: 16px;
+        text-align: center;
         color: #555;
     }
 
@@ -1489,5 +1538,6 @@ const openPopup = () => {
     .pac-container {
         z-index: 1050 !important; /* 더 높은 z-index 값 */
     }
+ 
 }
 </style>

@@ -44,7 +44,7 @@
                 </div>
               </li>
             
-              <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
+              
             </ul>
           </nav>
         </header>
@@ -89,7 +89,7 @@
                   </router-link>
                 </div>
               </li>
-              <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
+              
             </ul>
           </nav>
         </header>
@@ -185,7 +185,7 @@
           <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
           <!-- 로그인 시 -->
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
-          <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/chat">Chatting</router-link></li>
+          <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/chat"></router-link></li>
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link :to="`/userPage/${userId}`">My Page</router-link></li>
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
         </ul>

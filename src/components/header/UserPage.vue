@@ -796,7 +796,7 @@ a {
     background-position: center;
     border-radius: 8px;
     transition: opacity 0.3s ease;
-    min-height: 100px;
+    height: 100px;
     position:relative
 }
 /* 이벤트 제목 */
