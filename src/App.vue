@@ -19,7 +19,7 @@
               <li class="li-text-op1"><router-link to="/">Home</router-link></li>
               <li class="li-text-op1"><router-link to="/allEvents">Events</router-link></li>
               <li class="li-text-op1"><router-link to="/fnq">Help</router-link></li>
-              <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li>
+              <!-- <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li> -->
               <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
               <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
               <!-- 프로필 드롭다운 수정된 부분 -->
@@ -63,7 +63,7 @@
               <li class="li-text-op1"><router-link to="/">Home</router-link></li>
               <li class="li-text-op1"><router-link to="/allEvents">Events</router-link></li>
               <li class="li-text-op1"><router-link to="/fnq">Help</router-link></li>
-              <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li>
+              <!-- <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li> -->
               <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
                <!-- 로그인 시 -->
               <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
@@ -181,10 +181,11 @@
           <li><router-link to="/" @click="toggleMenu">Home</router-link></li>
           <li><router-link to="/allEvents" @click="toggleMenu">All Events</router-link></li>
           <li><router-link to="/fnq" @click="toggleMenu">Help</router-link></li>
-          <li><router-link to="/notice" @click="toggleMenu">Blogs</router-link></li>
+          <!-- <li><router-link to="/notice" @click="toggleMenu">Blogs</router-link></li> -->
           <li class="li-btn-op1" v-if="!isLoggedIn"><router-link to="/logIn">SignIn / SignUp</router-link></li>
           <!-- 로그인 시 -->
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/postEvent">Create Event</router-link></li>
+          <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/chat">Chatting</router-link></li>
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link :to="`/userPage/${userId}`">My Page</router-link></li>
           <li class="li-btn-op1" v-if="isLoggedIn"><router-link to="/" @click="logout">Log out</router-link></li>
         </ul>

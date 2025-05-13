@@ -17,7 +17,7 @@
             <li class="li-text-op1"><router-link to="/">Home</router-link></li>
             <li class="li-text-op1"><router-link to="/allEvents">Events</router-link></li>
             <li class="li-text-op1"><router-link to="/fnq">Help</router-link></li>
-            <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li>
+            <!-- <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li> -->
             <li class="li-btn-op1"><router-link to="/logIn">SignIn / SignUp</router-link></li>
             <!-- 로그인 시 -->
             <!-- <li class="li-btn-op1"><router-link to="/">Create Event</router-link></li>
@@ -40,7 +40,7 @@
             <li class="li-text-op1"><router-link to="/">Home</router-link></li>
             <li class="li-text-op1"><router-link to="/allEvents">Events</router-link></li>
             <li class="li-text-op1"><router-link to="/fnq">Help</router-link></li>
-            <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li>
+            <!-- <li class="li-text-op1"><router-link to="/notice">Blogs</router-link></li> -->
             <li class="li-btn-op1"><router-link to="/logIn">SignIn / SignUp</router-link></li>
             <!-- 로그인 시 -->
             <!-- <li class="li-btn-op1"><router-link to="/">Create Event</router-link></li>
@@ -69,7 +69,7 @@
             <li><router-link to="/" @click="toggleMenu">Home</router-link></li>
             <li><router-link to="/allEvents" @click="toggleMenu">All Events</router-link></li>
             <li><router-link to="/fnq" @click="toggleMenu">Help</router-link></li>
-            <li><router-link to="/notice" @click="toggleMenu">Blogs</router-link></li>
+            <!-- <li><router-link to="/notice" @click="toggleMenu">Blogs</router-link></li> -->
             <li class="li-btn-op1"><router-link to="/logIn">SignIn / SignUp</router-link></li>
             <!-- 로그인 시 -->
             <!-- <li class="li-btn-op1"><router-link to="/">Create Event</router-link></li>

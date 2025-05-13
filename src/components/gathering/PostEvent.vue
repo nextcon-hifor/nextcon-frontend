@@ -604,7 +604,7 @@ const postEvent = async () => {
             price: form.value.price,
             mainImage: mainImage,
             images: images,
-            location: form.value.roadAddress,
+            location: `${form.value.roadAddress} ${form.value.detailAddress}`,
             locationDetail: `${form.value.roadAddress} ${form.value.detailAddress}`,
             latitude: form.value.latitude,     // 추가
             longitude: form.value.longitude,   // 추가
