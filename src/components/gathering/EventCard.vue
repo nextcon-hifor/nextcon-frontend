@@ -30,7 +30,7 @@
             <div class="card-body">
               <!-- 제목을 상단으로 이동하고 고정 높이 컨테이너 추가 -->
               <div class="card-title-container">
-                <p class="card-title">{{ event.title }}</p>
+                <p class="card-title">{{ event.name || event.title }}</p>
               </div>
               <!-- 카드 정보 영역을 하단으로 이동 -->
               <div class="card-info-container"></div>
@@ -51,11 +51,6 @@
                     <p class="card-info-text">
                       <img class="card-info-icon" src="/assets/img/icon_Location.png" alt="" />
                       {{ event.location }}
-                    </p>
-                  </div>
-                  <div class="col-18">
-                    <p class="card-info-text">
-                      {{ event.name }}
                     </p>
                   </div>
                 </div>
@@ -286,7 +281,7 @@ export default {
     overflow: hidden;
   }
   .m-card-title {
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 500;
     margin: 0;
     display: -webkit-box;
