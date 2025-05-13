@@ -246,12 +246,14 @@
                                                 <span v-else>{{ event.host }}</span>
                                             </p>
                                             <!-- 리뷰 버튼 - 참여 여부에 상관없이 모든 좋아요한 이벤트에 표시 -->
-                                            <div class="review-button-container" v-if="!event.isDeleted">
+                                            <div class="review-button-container"
+                                             v-if="!event.isDeleted">
                                                 <!-- 본인이 주최한 이벤트가 아니고, 리뷰 작성 가능한 경우 (파란색) -->
                                                 <router-link
                                                     v-if="currentUserId === wantShowUserId && 
                                                         !event.hasReviewed && 
-                                                        event.hostId !== currentUserId"
+                                                        event.hostId !== currentUserId&&
+                                                        event.hasJoined"
                                                     :to="`/reviewEvent/${event.id}`"
                                                     class="review-btn available"
                                                     @click.stop
@@ -262,18 +264,29 @@
                                                 <!-- 본인이 주최한 이벤트가 아니고, 리뷰 작성 완료한 경우 (회색) -->
                                                 <button
                                                     v-else-if="currentUserId === wantShowUserId && 
-                                                            event.hasReviewed && 
-                                                            event.hostId !== currentUserId"
+                                                            event.hasReviewed&&
+                                                            event.hasJoined"       
                                                     class="review-btn completed"
                                                     disabled
                                                     @click.stop
                                                 >
                                                     리뷰 완료
                                                 </button>
+                                                <!-- 아직 참가하지 않은 경우 '참가 신청' -->
+                                                <router-link
+                                                    v-else-if="currentUserId === wantShowUserId && !event.hasJoined"
+                                                    :to="`/enterEvent/${event.id}`"
+                                                    class="review-btn available"
+                                                    @click.stop
+                                                >
+                                                    참가 신청
+                                                </router-link>
+                                                
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                
                             </router-link>
                         </div>
                     </div>
@@ -597,7 +610,7 @@ const fetchAllEvents = async () => {
             participatedResponse.data.map(async (event) => await mapEventData(event))
         );
             participatedEvents.value = sortEventsByDate(participatedEvents.value);
-
+        const participatedEventIds = new Set(participatedEvents.value.map(e => e.id));
         const likedResponse = await axios.get(
             `${import.meta.env.VITE_API_BASE_URL}/events/getLikedEvent/${wantShowUserId}`,
             { withCredentials: true }
@@ -629,7 +642,13 @@ const fetchAllEvents = async () => {
                 }
             })
         );
-        likedEvents.value = sortEventsByDate(mappedLikedEvents);
+        likedEvents.value = await Promise.all(
+        likedResponse.data.map(async (event) => {
+            const mapped = await mapEventData(event);
+            mapped.hasJoined = participatedEventIds.has(event.id); // ⬅️ 이걸 꼭 설정!
+            return mapped;
+        })
+    );
     } catch (error) {
         console.error("Error fetching events:", error);
     }
@@ -756,6 +775,7 @@ a {
 }
 
 .mp-card {
+    height:155px;
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 10px;

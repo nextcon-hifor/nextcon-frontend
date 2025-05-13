@@ -53,6 +53,11 @@
                       {{ event.location }}
                     </p>
                   </div>
+                  <div class="col-18">
+                    <p class="card-info-text">
+                      {{ event.name }}
+                    </p>
+                  </div>
                 </div>
               </div>
           </div>
@@ -346,27 +351,37 @@ export default {
   }
 
   .card-body .col-6,
-  .col-12 {
+  .col-12{
     padding: 0px;
+  }
+  .col-18{
+    padding: 0px;
+    font-size:32px;
   }
   /* 제목 컨테이너 고정 높이 추가 (새로 추가) */
   .card-title-container {
-    height: 80px; /* 고정 높이 */
-    margin-bottom: 10px;
+    height: 56px;
+    margin-bottom: 12px;
     overflow: hidden;
+    position: relative;
   }
   .card-title {
-    font-size: 1.75rem;
-    font-weight: 500;
+    font-size: 1.25rem; /* 적절한 크기 */
+    font-weight: 600;
+    color: #1f1f1f;
     text-align: left;
-    margin: 0px;
+    line-height: 1.4;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* 최대 2줄 (새로 추가) */
+    -webkit-line-clamp: 2; /* 최대 두 줄 표시 */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color 0.2s ease;
   }
-
+  .card-title:hover {
+  color: #4457ff; /* 포인트 색상 */
+  cursor: pointer;
+}
   .card-detail {
     text-align: left;
     font-size: 15px;
