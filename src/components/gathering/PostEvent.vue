@@ -77,7 +77,6 @@
                                 type="text"
                                 v-model="form.detailAddress"
                                 placeholder="e.g., Apt 101-504"
-                                required
                             />
                         </div>
                     </div>
@@ -147,7 +146,6 @@
                         ]"
                     >
                         <div v-if="uploadedFiles.length === 0">
-                            <i class="upload-icon"></i>
                             <span
                                 >Click to upload or drag and drop files
                                 here</span
@@ -251,7 +249,7 @@
                         type="number"
                         v-model="form.price"
                         placeholder="ex) 20,000KRW(Enter in units of 100 KRW) / All events must be approved on-site!"
-                        min="100"
+                        min="0"
                         step="100"
                         required
                     />
@@ -1144,7 +1142,7 @@ const openPopup = () => {
         padding: 15px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 0px;
+        border-radius: 8px;
         box-sizing: border-box;
     }
 
@@ -1154,7 +1152,7 @@ const openPopup = () => {
         padding: 20px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 0px;
+        border-radius: 8px;
         box-sizing: border-box;
     }
 
@@ -1163,12 +1161,15 @@ const openPopup = () => {
         padding: 20px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 0px;
+        border-radius: 8px;
         box-sizing: border-box;
     }
 
     .form-group select {
+        width: 100%;
+        border-radius: 8px;
         padding: 10px 30px 10px 10px;
+        border: 1px solid #ccc;
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
@@ -1537,7 +1538,6 @@ const openPopup = () => {
    
 .autocomplete-container {
   border-radius: 3px;
-  margin-left: -10px;
 }
     /* Google Maps 자동완성 드롭다운이 잘리지 않도록 설정 */
     .pac-container {
