@@ -1140,11 +1140,11 @@ const openPopup = () => {
 
     .form-group input {
         width: 100%;
-        height: 50px;
-        padding: 10px;
+        height: 45px;
+        padding: 15px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 24px;
+        border-radius: 0px;
         box-sizing: border-box;
     }
 
@@ -1154,7 +1154,7 @@ const openPopup = () => {
         padding: 20px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 24px;
+        border-radius: 0px;
         box-sizing: border-box;
     }
 
@@ -1163,7 +1163,7 @@ const openPopup = () => {
         padding: 20px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 24px;
+        border-radius: 0px;
         box-sizing: border-box;
     }
 
@@ -1534,6 +1534,11 @@ const openPopup = () => {
         outline: none;
         width: 100%;
     }
+   
+.autocomplete-container {
+  border-radius: 3px;
+  margin-left: -10px;
+}
     /* Google Maps 자동완성 드롭다운이 잘리지 않도록 설정 */
     .pac-container {
         z-index: 1050 !important; /* 더 높은 z-index 값 */
