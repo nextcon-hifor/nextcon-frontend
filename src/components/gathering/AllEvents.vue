@@ -25,7 +25,7 @@
               <input type="date" v-model="searchDate">
             </div>
 
-            <!-- Search Location -->
+            <!-- Search Location
             <div class="col-2 search-location">
               <select v-model="searchLocation">
                 <option value="" selected disabled hidden>Location</option>
@@ -56,7 +56,7 @@
                 <option value="Gangdong-gu">Gangdong-gu</option>
                 <option value="etc">etc</option>
               </select>
-            </div>
+            </div> -->
 
             <!-- Search Type -->
             <div class="col-2 search-type">
@@ -125,11 +125,11 @@
         from the <span style="color: #58C3FF;">HiFor.</span>
       </div>
 
-      <div class="m-search-box">
+      <!-- <div class="m-search-box"> -->
         <!-- 검색어 -->
-        <input type="text" class="search-text-box" v-model="searchQuery" placeholder="Search...">
+        <!-- <input type="text" class="search-text-box" v-model="searchQuery" placeholder="Search..."> -->
         <!-- 지역 -->
-        <select v-model="searchLocation">
+        <!-- <select v-model="searchLocation">
           <option value="" selected disabled hidden>Location</option>
           <option value="Jongno-gu">Jongno-gu</option>
           <option value="Jung-gu">Jung-gu</option>
@@ -157,18 +157,18 @@
           <option value="Songpa-gu">Songpa-gu</option>
           <option value="Gangdong-gu">Gangdong-gu</option>
           <option value="etc">etc</option>
-        </select>
+        </select> -->
         <!-- 이벤트 타입 -->
-        <select v-model="searchType">
+        <!-- <select v-model="searchType">
           <option value="" selected disabled hidden>Event Type</option>
           <option value="FirstCome">First come</option>
           <option value="Register">Register</option>
-        </select>
+        </select> -->
         <!-- 검색버튼 -->
-        <button type="submit">
+        <!-- <button type="submit">
           Search
         </button>
-      </div>
+      </div> -->
 
       <!-- 카테고리 -->
       <div class="category-row">
